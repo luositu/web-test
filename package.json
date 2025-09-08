@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0 -p 5000",
+    "dev:replit": "next dev -H 0.0.0.0 -p 5000",
     "lint": "next lint",
     "start": "next start"
   },
