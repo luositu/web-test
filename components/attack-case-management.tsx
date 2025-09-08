@@ -1659,7 +1659,7 @@ export function AttackCaseManagement() {
       <Dialog open={showSenderDialog} onOpenChange={setShowSenderDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>选择账号组</DialogTitle>
+            <DialogTitle>选择发信人账号组</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {accountGroups.map((group) => (
@@ -1670,6 +1670,39 @@ export function AttackCaseManagement() {
                   setSelectedSenderGroup(group)
                   setShowSenderDialog(false)
                 }}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-foreground">{group.name}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">{group.description}</p>
+                      <div className="flex items-center mt-2 text-sm text-muted-foreground">
+                        <Users className="mr-1 h-3 w-3" />
+                        {group.accountCount} 个账号
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      <Badge variant="outline">{group.accountCount}</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showReceiverDialog} onOpenChange={setShowReceiverDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>选择收信人账号组</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {accountGroups.map((group) => (
+              <Card
+                key={group.id}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleReceiverGroupSelect(group)}
               >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
