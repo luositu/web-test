@@ -321,6 +321,33 @@ export function TaskManagement() {
     autoStart: false,
   })
 
+  // 弹窗相关状态
+  const [showCaseSelectionDialog, setShowCaseSelectionDialog] = useState(false)
+  const [tempSelectedCases, setTempSelectedCases] = useState<string[]>([])
+  const [caseSearchQuery, setCaseSearchQuery] = useState("")
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all")
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>("all")
+
+  // 攻击类型分类
+  const attackCategories = [
+    {
+      name: "社交互动",
+      types: ["点赞", "评论", "关注", "访问主页"],
+    },
+    {
+      name: "账号",
+      types: ["登录", "注册"],
+    },
+    {
+      name: "私信服务",
+      types: ["私聊文本", "私聊图片", "私聊卡片", "私聊表情", "私聊语音", "私聊视频", "私聊转发站内作品", "私聊发送个人主页", "私聊回复在干嘛", "群聊文本", "群聊图片", "群聊卡片", "群聊表情", "群聊语音", "群聊视频", "群聊发送个人主页", "群聊创建", "群聊设置", "群聊加入", "回复在干嘛"],
+    },
+    {
+      name: "商业化激励",
+      types: ["广告金币"],
+    },
+  ]
+
   const getStatusIcon = (status: Task["status"]) => {
     switch (status) {
       case "running":
