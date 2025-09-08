@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   Plus,
   Settings,
@@ -423,6 +424,76 @@ export function TaskManagement() {
     })
   }
 
+  // 筛选攻击用例
+  const getFilteredAttackCases = () => {
+    return attackCases.filter((attackCase) => {
+      // 搜索查询筛选
+      if (caseSearchQuery) {
+        const searchLower = caseSearchQuery.toLowerCase()
+        if (!attackCase.name.toLowerCase().includes(searchLower) && 
+            !attackCase.type.toLowerCase().includes(searchLower)) {
+          return false
+        }
+      }
+
+      // 类别筛选
+      if (selectedCategoryFilter !== "all") {
+        const category = attackCategories.find(cat => cat.name === selectedCategoryFilter)
+        if (!category || !category.types.includes(attackCase.type)) {
+          return false
+        }
+      }
+
+      // 子类型筛选
+      if (selectedTypeFilter !== "all") {
+        if (attackCase.type !== selectedTypeFilter) {
+          return false
+        }
+      }
+
+      return true
+    })
+  }
+
+  // 获取可用子类型
+  const getAvailableTypes = () => {
+    if (selectedCategoryFilter === "all") {
+      return attackCategories.flatMap(cat => cat.types)
+    }
+    const category = attackCategories.find(cat => cat.name === selectedCategoryFilter)
+    return category ? category.types : []
+  }
+
+  // 弹窗处理函数
+  const handleOpenCaseSelection = () => {
+    setTempSelectedCases([...newTask.attackCases])
+    setShowCaseSelectionDialog(true)
+  }
+
+  const handleConfirmCaseSelection = () => {
+    setNewTask({ ...newTask, attackCases: tempSelectedCases })
+    setShowCaseSelectionDialog(false)
+    setCaseSearchQuery("")
+    setSelectedCategoryFilter("all")
+    setSelectedTypeFilter("all")
+  }
+
+  const handleCancelCaseSelection = () => {
+    setTempSelectedCases([])
+    setShowCaseSelectionDialog(false)
+    setCaseSearchQuery("")
+    setSelectedCategoryFilter("all")
+    setSelectedTypeFilter("all")
+  }
+
+  const handleTempCaseToggle = (caseId: string) => {
+    if (tempSelectedCases.includes(caseId)) {
+      setTempSelectedCases(tempSelectedCases.filter(id => id !== caseId))
+    } else {
+      setTempSelectedCases([...tempSelectedCases, caseId])
+    }
+  }
+
   const handleCreateTask = () => {
     if (!newTask.name.trim()) {
       alert('请输入任务名称')
@@ -655,75 +726,33 @@ export function TaskManagement() {
                 </div>
 
                 {/* 用例选择区域 */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="flex items-center">
-                      <Target className="mr-2 h-4 w-4" />
-                      选择攻击用例
-                    </Label>
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setNewTask({ ...newTask, attackCases: attackCases.map(c => c.id) })}
-                      >
-                        全选
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setNewTask({ ...newTask, attackCases: [] })}
-                      >
-                        清空
-                      </Button>
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center">
+                    <Target className="mr-2 h-4 w-4" />
+                    选择攻击用例
+                  </Label>
                   
-                  <div className="border border-border rounded-lg p-4">
-                    <div className="space-y-3 max-h-80 overflow-y-auto">
-                      {attackCases.map((attackCase) => (
-                        <div key={attackCase.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                          <div className="flex items-center space-x-3">
-                            <input 
-                              type="checkbox" 
-                              className="rounded" 
-                              checked={newTask.attackCases.includes(attackCase.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setNewTask({ ...newTask, attackCases: [...newTask.attackCases, attackCase.id] })
-                                } else {
-                                  setNewTask({ ...newTask, attackCases: newTask.attackCases.filter(id => id !== attackCase.id) })
-                                }
-                              }}
-                            />
-                            <div className="flex-1">
-                              <p className="font-medium">{attackCase.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {attackCase.type} | 目标: {attackCase.targetCount} | 
-                                成功率: {attackCase.successRate}% | 
-                                状态: {attackCase.status === 'active' ? '活跃' : 
-                                     attackCase.status === 'paused' ? '暂停' : 
-                                     attackCase.status === 'completed' ? '已完成' : 
-                                     attackCase.status === 'draft' ? '草稿' : '待执行'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end space-y-1">
-                            <Badge variant="outline">{attackCase.type}</Badge>
-                            {attackCase.status === 'active' && <Badge className="bg-green-500 text-white">可用</Badge>}
-                            {attackCase.status === 'paused' && <Badge className="bg-yellow-500 text-white">暂停</Badge>}
-                            {attackCase.status === 'completed' && <Badge className="bg-blue-500 text-white">已完成</Badge>}
-                            {attackCase.status === 'draft' && <Badge className="bg-gray-500 text-white">草稿</Badge>}
-                            {attackCase.status === '待执行' && <Badge className="bg-orange-500 text-white">待执行</Badge>}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="flex items-center justify-between pt-3 mt-3 border-t">
+                  <div className="border border-border rounded-lg p-4 bg-muted/20">
+                    <div className="flex items-center justify-between">
                       <div className="text-sm text-muted-foreground">
-                        已选择 {newTask.attackCases.length} 个用例，共 {attackCases.length} 个可用
+                        {newTask.attackCases.length > 0 ? (
+                          <span>
+                            已选择 {newTask.attackCases.length} 个用例: {' '}
+                            {getAttackCaseNames(newTask.attackCases).slice(0, 2).join(", ")}
+                            {newTask.attackCases.length > 2 ? "..." : ""}
+                          </span>
+                        ) : (
+                          "尚未选择任何攻击用例"
+                        )}
                       </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleOpenCaseSelection}
+                      >
+                        <Target className="mr-2 h-4 w-4" />
+                        选择用例
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -903,6 +932,161 @@ export function TaskManagement() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* 用例选择弹窗 */}
+      <Dialog open={showCaseSelectionDialog} onOpenChange={setShowCaseSelectionDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Target className="mr-2 h-5 w-5" />
+              选择攻击用例
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* 搜索和筛选区域 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>搜索用例</Label>
+                <Input
+                  placeholder="搜索用例名称或类型"
+                  value={caseSearchQuery}
+                  onChange={(e) => setCaseSearchQuery(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>攻击类型</Label>
+                <Select
+                  value={selectedCategoryFilter}
+                  onValueChange={(value) => {
+                    setSelectedCategoryFilter(value)
+                    setSelectedTypeFilter("all")
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择攻击类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">所有类型</SelectItem>
+                    {attackCategories.map((category) => (
+                      <SelectItem key={category.name} value={category.name}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>子类型</Label>
+                <Select
+                  value={selectedTypeFilter}
+                  onValueChange={setSelectedTypeFilter}
+                  disabled={selectedCategoryFilter === "all"}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择子类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">所有子类型</SelectItem>
+                    {getAvailableTypes().map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* 操作按钮 */}
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="text-sm text-muted-foreground">
+                已选择 {tempSelectedCases.length} 个用例，共 {getFilteredAttackCases().length} 个匹配
+              </div>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setTempSelectedCases(getFilteredAttackCases().map(c => c.id))}
+                >
+                  全选
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setTempSelectedCases([])}
+                >
+                  清空
+                </Button>
+              </div>
+            </div>
+
+            {/* 用例列表 */}
+            <div className="max-h-96 overflow-y-auto space-y-2">
+              {getFilteredAttackCases().length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  没有找到匹配的攻击用例
+                </div>
+              ) : (
+                getFilteredAttackCases().map((attackCase) => (
+                  <div 
+                    key={attackCase.id} 
+                    className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => handleTempCaseToggle(attackCase.id)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <input 
+                        type="checkbox" 
+                        className="rounded" 
+                        checked={tempSelectedCases.includes(attackCase.id)}
+                        onChange={() => handleTempCaseToggle(attackCase.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium">{attackCase.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {attackCase.type} | 目标: {attackCase.targetCount} | 
+                          成功率: {attackCase.successRate}% | 
+                          状态: {attackCase.status === 'active' ? '活跃' : 
+                               attackCase.status === 'paused' ? '暂停' : 
+                               attackCase.status === 'completed' ? '已完成' : 
+                               attackCase.status === 'draft' ? '草稿' : '待执行'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end space-y-1">
+                      <Badge variant="outline">{attackCase.type}</Badge>
+                      {attackCase.status === 'active' && <Badge className="bg-green-500 text-white text-xs">可用</Badge>}
+                      {attackCase.status === 'paused' && <Badge className="bg-yellow-500 text-white text-xs">暂停</Badge>}
+                      {attackCase.status === 'completed' && <Badge className="bg-blue-500 text-white text-xs">已完成</Badge>}
+                      {attackCase.status === 'draft' && <Badge className="bg-gray-500 text-white text-xs">草稿</Badge>}
+                      {attackCase.status === '待执行' && <Badge className="bg-orange-500 text-white text-xs">待执行</Badge>}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* 确认取消按钮 */}
+            <div className="flex justify-end space-x-3 pt-4 border-t">
+              <Button 
+                variant="outline" 
+                onClick={handleCancelCaseSelection}
+              >
+                取消
+              </Button>
+              <Button 
+                onClick={handleConfirmCaseSelection}
+                className="bg-primary text-primary-foreground"
+              >
+                确认选择 ({tempSelectedCases.length})
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
