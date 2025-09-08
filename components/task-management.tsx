@@ -610,45 +610,67 @@ export function TaskManagement() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 border border-border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <input type="checkbox" className="rounded" />
-                        <div>
-                          <p className="font-medium">钓鱼邮件测试 - 财务部门</p>
-                          <p className="text-sm text-muted-foreground">邮件钓鱼攻击</p>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {attackCases.map((attackCase) => (
+                      <div key={attackCase.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <input 
+                            type="checkbox" 
+                            className="rounded" 
+                            checked={newTask.attackCases.includes(attackCase.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setNewTask({ ...newTask, attackCases: [...newTask.attackCases, attackCase.id] })
+                              } else {
+                                setNewTask({ ...newTask, attackCases: newTask.attackCases.filter(id => id !== attackCase.id) })
+                              }
+                            }}
+                          />
+                          <div>
+                            <p className="font-medium">{attackCase.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {attackCase.type} | 目标: {attackCase.targetCount} | 
+                              成功率: {attackCase.successRate}% | 
+                              状态: {attackCase.status === 'active' ? '活跃' : 
+                                   attackCase.status === 'paused' ? '暂停' : 
+                                   attackCase.status === 'completed' ? '已完成' : 
+                                   attackCase.status === 'draft' ? '草稿' : '待执行'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end space-y-1">
+                          <Badge variant="outline">{attackCase.type}</Badge>
+                          {attackCase.status === 'active' && <Badge className="bg-green-500 text-white">可用</Badge>}
+                          {attackCase.status === 'paused' && <Badge className="bg-yellow-500 text-white">暂停</Badge>}
+                          {attackCase.status === 'completed' && <Badge className="bg-blue-500 text-white">已完成</Badge>}
+                          {attackCase.status === 'draft' && <Badge className="bg-gray-500 text-white">草稿</Badge>}
+                          {attackCase.status === '待执行' && <Badge className="bg-orange-500 text-white">待执行</Badge>}
                         </div>
                       </div>
-                      <Badge variant="outline">邮件</Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 border border-border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <input type="checkbox" className="rounded" />
-                        <div>
-                          <p className="font-medium">社交工程攻击 - LinkedIn</p>
-                          <p className="text-sm text-muted-foreground">社交媒体攻击</p>
-                        </div>
-                      </div>
-                      <Badge variant="outline">社交</Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 border border-border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <input type="checkbox" className="rounded" />
-                        <div>
-                          <p className="font-medium">恶意链接测试 - 内部系统</p>
-                          <p className="text-sm text-muted-foreground">Web攻击测试</p>
-                        </div>
-                      </div>
-                      <Badge variant="outline">Web</Badge>
-                    </div>
+                    ))}
                   </div>
 
-                  <Button variant="outline" className="w-full bg-transparent">
-                    <Plus className="mr-2 h-4 w-4" />
-                    添加更多用例
-                  </Button>
+                  <div className="flex items-center justify-between pt-3 border-t">
+                    <div className="text-sm text-muted-foreground">
+                      已选择 {newTask.attackCases.length} 个用例，共 {attackCases.length} 个可用
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setNewTask({ ...newTask, attackCases: attackCases.map(c => c.id) })}
+                      >
+                        全选
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setNewTask({ ...newTask, attackCases: [] })}
+                      >
+                        清空
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
