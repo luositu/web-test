@@ -578,16 +578,17 @@ export function TaskManagement() {
 
         {/* 创建计划 */}
         <TabsContent value="create" className="space-y-4 min-h-[600px] w-full">
-          <div className="w-full max-w-none">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center text-foreground">
-                    <Plus className="mr-2 h-5 w-5" />
-                    创建攻击计划
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+          <div className="w-full max-w-4xl mx-auto">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center text-foreground">
+                  <Plus className="mr-2 h-5 w-5" />
+                  创建攻击计划
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* 基本信息 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="task-name">计划名称</Label>
                     <Input
@@ -595,16 +596,6 @@ export function TaskManagement() {
                       placeholder="输入攻击计划名称"
                       value={newTask.name}
                       onChange={(e) => setNewTask({ ...newTask, name: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="task-description">计划描述</Label>
-                    <Textarea
-                      id="task-description"
-                      placeholder="描述攻击计划的目标和范围"
-                      value={newTask.description}
-                      onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                     />
                   </div>
 
@@ -624,88 +615,25 @@ export function TaskManagement() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="scheduled-time">计划执行时间</Label>
-                    <Input
-                      id="scheduled-time"
-                      type="datetime-local"
-                      value={newTask.scheduledTime}
-                      onChange={(e) => setNewTask({ ...newTask, scheduledTime: e.target.value })}
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="task-description">计划描述</Label>
+                  <Textarea
+                    id="task-description"
+                    placeholder="描述攻击计划的目标和范围"
+                    value={newTask.description}
+                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                  />
+                </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="auto-start"
-                      checked={newTask.autoStart}
-                      onCheckedChange={(checked) => setNewTask({ ...newTask, autoStart: checked })}
-                    />
-                    <Label htmlFor="auto-start">自动启动执行</Label>
-                  </div>
-
-                  <Button 
-                    className="w-full bg-primary text-primary-foreground"
-                    onClick={handleCreateTask}
-                  >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    创建计划
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center text-foreground">
-                    <Target className="mr-2 h-5 w-5" />
-                    用例选择
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {attackCases.map((attackCase) => (
-                      <div key={attackCase.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <input 
-                            type="checkbox" 
-                            className="rounded" 
-                            checked={newTask.attackCases.includes(attackCase.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setNewTask({ ...newTask, attackCases: [...newTask.attackCases, attackCase.id] })
-                              } else {
-                                setNewTask({ ...newTask, attackCases: newTask.attackCases.filter(id => id !== attackCase.id) })
-                              }
-                            }}
-                          />
-                          <div>
-                            <p className="font-medium">{attackCase.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {attackCase.type} | 目标: {attackCase.targetCount} | 
-                              成功率: {attackCase.successRate}% | 
-                              状态: {attackCase.status === 'active' ? '活跃' : 
-                                   attackCase.status === 'paused' ? '暂停' : 
-                                   attackCase.status === 'completed' ? '已完成' : 
-                                   attackCase.status === 'draft' ? '草稿' : '待执行'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end space-y-1">
-                          <Badge variant="outline">{attackCase.type}</Badge>
-                          {attackCase.status === 'active' && <Badge className="bg-green-500 text-white">可用</Badge>}
-                          {attackCase.status === 'paused' && <Badge className="bg-yellow-500 text-white">暂停</Badge>}
-                          {attackCase.status === 'completed' && <Badge className="bg-blue-500 text-white">已完成</Badge>}
-                          {attackCase.status === 'draft' && <Badge className="bg-gray-500 text-white">草稿</Badge>}
-                          {attackCase.status === '待执行' && <Badge className="bg-orange-500 text-white">待执行</Badge>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t">
-                    <div className="text-sm text-muted-foreground">
-                      已选择 {newTask.attackCases.length} 个用例，共 {attackCases.length} 个可用
-                    </div>
+                {/* 用例选择区域 */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center">
+                      <Target className="mr-2 h-4 w-4" />
+                      选择攻击用例
+                    </Label>
                     <div className="flex space-x-2">
                       <Button 
                         variant="outline" 
@@ -723,9 +651,91 @@ export function TaskManagement() {
                       </Button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                  
+                  <div className="border border-border rounded-lg p-4">
+                    <div className="space-y-3 max-h-80 overflow-y-auto">
+                      {attackCases.map((attackCase) => (
+                        <div key={attackCase.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center space-x-3">
+                            <input 
+                              type="checkbox" 
+                              className="rounded" 
+                              checked={newTask.attackCases.includes(attackCase.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setNewTask({ ...newTask, attackCases: [...newTask.attackCases, attackCase.id] })
+                                } else {
+                                  setNewTask({ ...newTask, attackCases: newTask.attackCases.filter(id => id !== attackCase.id) })
+                                }
+                              }}
+                            />
+                            <div className="flex-1">
+                              <p className="font-medium">{attackCase.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {attackCase.type} | 目标: {attackCase.targetCount} | 
+                                成功率: {attackCase.successRate}% | 
+                                状态: {attackCase.status === 'active' ? '活跃' : 
+                                     attackCase.status === 'paused' ? '暂停' : 
+                                     attackCase.status === 'completed' ? '已完成' : 
+                                     attackCase.status === 'draft' ? '草稿' : '待执行'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end space-y-1">
+                            <Badge variant="outline">{attackCase.type}</Badge>
+                            {attackCase.status === 'active' && <Badge className="bg-green-500 text-white">可用</Badge>}
+                            {attackCase.status === 'paused' && <Badge className="bg-yellow-500 text-white">暂停</Badge>}
+                            {attackCase.status === 'completed' && <Badge className="bg-blue-500 text-white">已完成</Badge>}
+                            {attackCase.status === 'draft' && <Badge className="bg-gray-500 text-white">草稿</Badge>}
+                            {attackCase.status === '待执行' && <Badge className="bg-orange-500 text-white">待执行</Badge>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="flex items-center justify-between pt-3 mt-3 border-t">
+                      <div className="text-sm text-muted-foreground">
+                        已选择 {newTask.attackCases.length} 个用例，共 {attackCases.length} 个可用
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 执行设置 */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduled-time">计划执行时间</Label>
+                    <Input
+                      id="scheduled-time"
+                      type="datetime-local"
+                      value={newTask.scheduledTime}
+                      onChange={(e) => setNewTask({ ...newTask, scheduledTime: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-2 pt-8">
+                    <Switch
+                      id="auto-start"
+                      checked={newTask.autoStart}
+                      onCheckedChange={(checked) => setNewTask({ ...newTask, autoStart: checked })}
+                    />
+                    <Label htmlFor="auto-start">自动启动执行</Label>
+                  </div>
+                </div>
+
+                {/* 创建按钮 */}
+                <div className="pt-4 border-t">
+                  <Button 
+                    className="w-full md:w-auto bg-primary text-primary-foreground"
+                    onClick={handleCreateTask}
+                    size="lg"
+                  >
+                    <Calendar className="mr-2 h-4 w-4" />
+                    创建计划
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
