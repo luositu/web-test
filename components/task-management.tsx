@@ -389,6 +389,52 @@ export function TaskManagement() {
     }
   }
 
+  const getAttackCaseNames = (caseIds: string[]) => {
+    return caseIds.map(id => {
+      const attackCase = attackCases.find(c => c.id === id)
+      return attackCase ? attackCase.name : id
+    })
+  }
+
+  const handleCreateTask = () => {
+    if (!newTask.name.trim()) {
+      alert('请输入任务名称')
+      return
+    }
+
+    if (newTask.attackCases.length === 0) {
+      alert('请选择至少一个攻击用例')
+      return
+    }
+
+    const newTaskData: Task = {
+      id: Date.now().toString(),
+      name: newTask.name,
+      description: newTask.description,
+      status: "pending",
+      priority: newTask.priority,
+      attackCases: newTask.attackCases,
+      startTime: newTask.scheduledTime || new Date().toLocaleString(),
+      progress: 0,
+      createdAt: new Date().toLocaleDateString(),
+      createdBy: "当前用户",
+    }
+
+    setTasks([...tasks, newTaskData])
+
+    // 重置表单
+    setNewTask({
+      name: "",
+      description: "",
+      priority: "medium",
+      attackCases: [],
+      scheduledTime: "",
+      autoStart: false,
+    })
+
+    alert(`任务 "${newTaskData.name}" 创建成功！`)
+  }
+
   return (
     <div className="space-y-6 min-w-[1200px]">
       {/* Page Header */}
@@ -484,6 +530,9 @@ export function TaskManagement() {
                         <div>
                           <p className="font-medium">{task.name}</p>
                           <p className="text-sm text-muted-foreground">{task.description}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            用例: {getAttackCaseNames(task.attackCases).join(", ")}
+                          </p>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -595,7 +644,10 @@ export function TaskManagement() {
                     <Label htmlFor="auto-start">自动启动执行</Label>
                   </div>
 
-                  <Button className="w-full bg-primary text-primary-foreground">
+                  <Button 
+                    className="w-full bg-primary text-primary-foreground"
+                    onClick={handleCreateTask}
+                  >
                     <Calendar className="mr-2 h-4 w-4" />
                     创建计划
                   </Button>
@@ -726,6 +778,9 @@ export function TaskManagement() {
                               <div className="flex items-center justify-between text-sm text-muted-foreground">
                                 <span>开始时间: {task.startTime}</span>
                                 <span>用例数: {task.attackCases.length}</span>
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-2">
+                                用例: {getAttackCaseNames(task.attackCases).slice(0, 2).join(", ")}{task.attackCases.length > 2 ? '...' : ''}
                               </div>
                             </div>
                           </div>
