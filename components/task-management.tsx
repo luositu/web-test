@@ -46,6 +46,23 @@ interface Task {
   createdBy: string
 }
 
+interface AttackCase {
+  id: string
+  name: string
+  type: string
+  status: "draft" | "active" | "paused" | "completed" | "待执行"
+  targetCount: number
+  successRate: number
+  createdAt: string
+  lastExecuted: string
+  senderGroup: string
+  senderAccounts: string[]
+  receiverGroup: string
+  receiverAccounts: string[]
+  attackCount: number
+  qps: number
+}
+
 interface LogEntry {
   id: string
   taskId: string
@@ -56,6 +73,170 @@ interface LogEntry {
 }
 
 export function TaskManagement() {
+  // 模拟攻击用例数据 - 实际应该从攻击用例管理组件或API获取
+  const [attackCases] = useState<AttackCase[]>([
+    {
+      id: "1",
+      name: "钓鱼邮件测试 - 财务部门",
+      type: "私聊文本",
+      status: "active",
+      targetCount: 45,
+      successRate: 23.5,
+      createdAt: "2024-01-10",
+      lastExecuted: "2024-01-15 14:30",
+      senderGroup: "测试组A",
+      senderAccounts: ["1", "2"],
+      receiverGroup: "",
+      receiverAccounts: [],
+      attackCount: 1,
+      qps: 60,
+    },
+    {
+      id: "2", 
+      name: "社交工程攻击 - LinkedIn",
+      type: "群聊文本",
+      status: "paused",
+      targetCount: 28,
+      successRate: 18.2,
+      createdAt: "2024-01-12",
+      lastExecuted: "2024-01-14 09:15",
+      senderGroup: "测试组B",
+      senderAccounts: [],
+      receiverGroup: "",
+      receiverAccounts: [],
+      attackCount: 1,
+      qps: 60,
+    },
+    {
+      id: "3",
+      name: "恶意链接测试 - 内部系统",
+      type: "私聊图片", 
+      status: "completed",
+      targetCount: 67,
+      successRate: 31.8,
+      createdAt: "2024-01-08",
+      lastExecuted: "2024-01-13 16:45",
+      senderGroup: "测试组C",
+      senderAccounts: [],
+      receiverGroup: "",
+      receiverAccounts: [],
+      attackCount: 1,
+      qps: 60,
+    },
+    {
+      id: "4",
+      name: "点赞攻击测试 - 营销部门", 
+      type: "点赞",
+      status: "active",
+      targetCount: 32,
+      successRate: 28.1,
+      createdAt: "2024-01-11",
+      lastExecuted: "2024-01-16 10:20",
+      senderGroup: "测试组A",
+      senderAccounts: ["1", "2"],
+      receiverGroup: "",
+      receiverAccounts: [],
+      attackCount: 1,
+      qps: 60,
+    },
+    {
+      id: "5",
+      name: "评论攻击测试",
+      type: "评论",
+      status: "draft",
+      targetCount: 15,
+      successRate: 0,
+      createdAt: "2024-01-13",
+      lastExecuted: "未执行",
+      senderGroup: "测试组B",
+      senderAccounts: [],
+      receiverGroup: "",
+      receiverAccounts: [],
+      attackCount: 1,
+      qps: 60,
+    },
+    {
+      id: "6",
+      name: "账号登录测试",
+      type: "登录",
+      status: "active",
+      targetCount: 58,
+      successRate: 35.2,
+      createdAt: "2024-01-09",
+      lastExecuted: "2024-01-15 16:30",
+      senderGroup: "测试组C",
+      senderAccounts: [],
+      receiverGroup: "",
+      receiverAccounts: [],
+      attackCount: 1,
+      qps: 60,
+    },
+    {
+      id: "7",
+      name: "账号注册测试",
+      type: "注册",
+      status: "paused",
+      targetCount: 22,
+      successRate: 19.8,
+      createdAt: "2024-01-14",
+      lastExecuted: "2024-01-16 08:45",
+      senderGroup: "测试组A",
+      senderAccounts: ["1", "2"],
+      receiverGroup: "",
+      receiverAccounts: [],
+      attackCount: 1,
+      qps: 60,
+    },
+    {
+      id: "8",
+      name: "关注攻击测试",
+      type: "关注",
+      status: "completed",
+      targetCount: 41,
+      successRate: 26.7,
+      createdAt: "2024-01-07",
+      lastExecuted: "2024-01-12 14:15",
+      senderGroup: "测试组B",
+      senderAccounts: [],
+      receiverGroup: "",
+      receiverAccounts: [],
+      attackCount: 1,
+      qps: 60,
+    },
+    {
+      id: "9",
+      name: "私聊个人主页分享",
+      type: "私聊发送个人主页",
+      status: "active",
+      targetCount: 19,
+      successRate: 42.1,
+      createdAt: "2024-01-15",
+      lastExecuted: "2024-01-16 11:30",
+      senderGroup: "测试组C", 
+      senderAccounts: [],
+      receiverGroup: "",
+      receiverAccounts: [],
+      attackCount: 1,
+      qps: 60,
+    },
+    {
+      id: "10",
+      name: "群聊创建测试",
+      type: "群聊创建",
+      status: "draft",
+      targetCount: 8,
+      successRate: 0,
+      createdAt: "2024-01-16",
+      lastExecuted: "未执行",
+      senderGroup: "测试组A",
+      senderAccounts: ["1", "2"],
+      receiverGroup: "",
+      receiverAccounts: [],
+      attackCount: 1,
+      qps: 60,
+    },
+  ])
+
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: "1",
