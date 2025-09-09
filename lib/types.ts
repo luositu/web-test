@@ -5,9 +5,10 @@ export interface Account {
   sixin_st: string
   salt: string
   did: string
-  status: "active" | "inactive" | "error"
+  group: string
+  status?: "active" | "inactive" | "error"
   description?: string
-  lastUsed: string
+  lastUsed?: string
   createdAt: string
   updatedAt: string
 }
@@ -15,18 +16,39 @@ export interface Account {
 export interface AttackCase {
   id: string
   name: string
-  type: "email" | "social" | "web" | "sms"
-  status: "draft" | "active" | "paused" | "completed"
-  description: string
-  targetAccounts: string[]
-  messageTemplate: string
+  type: string
+  status: "draft" | "active" | "paused" | "completed" | "pending"
+  description?: string
+  targetAccounts?: string[]
+  messageTemplate?: string
   attackCount: number
-  interval: number
-  successRate: number
-  targetCount: number
+  interval?: number
+  qps: number
+  successRate?: number
+  targetCount?: number
   createdAt: string
-  lastRun: string
-  createdBy: string
+  lastExecuted?: string
+  lastRun?: string
+  createdBy?: string
+  senderGroup: string
+  senderAccounts: string[]
+  receiverGroup?: string
+  receiverAccounts: string[]
+  accountParams?: {
+    did?: string
+    deviceModel?: string
+    osVersion?: string
+    appVersion?: string
+  }
+  messageContent?: {
+    text?: string
+    imageUrl?: string
+    cardContent?: string
+    cardImageUrl?: string
+    cardWebUrl?: string
+    voiceUrl?: string
+    videoUrl?: string
+  }
 }
 
 export interface Task {
