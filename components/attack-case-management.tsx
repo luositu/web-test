@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { toast } from "@/hooks/use-toast"
 import { dataStore } from "@/lib/data-store"
 import type { AttackCase, IMServiceInterface, HTTPServiceInterface } from "@/lib/types"
@@ -25,6 +26,8 @@ import {
   Edit,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Settings,
   Eye,
   Play,
@@ -55,6 +58,7 @@ interface Account {
 
 export function AttackCaseManagement() {
   const [attackCases, setAttackCases] = useState<AttackCase[]>([])
+  const [isChainConfigOpen, setIsChainConfigOpen] = useState(false)
   
   // 新用例表单状态
   const [newCase, setNewCase] = useState({
@@ -475,6 +479,117 @@ export function AttackCaseManagement() {
                 </div>
               </div>
 
+              {/* 链路级配置 */}
+              <Collapsible open={isChainConfigOpen} onOpenChange={setIsChainConfigOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    <span className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      链路级配置
+                    </span>
+                    {isChainConfigOpen ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-4 mt-4">
+                  <div className="border rounded-lg p-4 space-y-4">
+                    {/* 账号组选择 */}
+                    <div className="space-y-2">
+                      <Label>链路账号组</Label>
+                      <Select 
+                        value={newCase.chainConfig.accountGroup} 
+                        onValueChange={(value) => setNewCase({ 
+                          ...newCase, 
+                          chainConfig: { ...newCase.chainConfig, accountGroup: value }
+                        })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择链路账号组" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {accountGroups.map((group) => (
+                            <SelectItem key={group.id} value={group.name}>
+                              {group.name} ({group.accountCount}个账号)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* 参数文件上传 */}
+                    <div className="space-y-2">
+                      <Label htmlFor="parameter-file">参数文件</Label>
+                      <Input
+                        id="parameter-file"
+                        type="file"
+                        accept=".json,.csv,.txt"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null
+                          setNewCase({ 
+                            ...newCase, 
+                            chainConfig: { ...newCase.chainConfig, parameterFile: file }
+                          })
+                        }}
+                      />
+                      <div className="text-xs text-muted-foreground">
+                        支持JSON、CSV、TXT格式文件，用于提供额外参数
+                      </div>
+                      {newCase.chainConfig.parameterFile && (
+                        <div className="text-sm text-green-600">
+                          已选择文件: {newCase.chainConfig.parameterFile.name}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 全局变量定义 */}
+                    <div className="space-y-2">
+                      <Label htmlFor="global-variables">全局变量</Label>
+                      <Textarea
+                        id="global-variables"
+                        placeholder='定义全局变量，例如: {"baseUrl": "https://api.example.com", "timeout": 5000}'
+                        value={newCase.chainConfig.globalVariables}
+                        onChange={(e) => setNewCase({ 
+                          ...newCase, 
+                          chainConfig: { ...newCase.chainConfig, globalVariables: e.target.value }
+                        })}
+                        className="font-mono text-sm"
+                        rows={4}
+                      />
+                      <div className="text-xs text-muted-foreground">
+                        使用JSON格式定义在整个链路中可用的全局变量
+                      </div>
+                    </div>
+
+                    {/* 攻击次数和QPS */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="attack-count">攻击次数</Label>
+                        <Input
+                          id="attack-count"
+                          type="number"
+                          min="1"
+                          value={newCase.attackCount}
+                          onChange={(e) => setNewCase({ ...newCase, attackCount: parseInt(e.target.value) || 1 })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="qps">QPS</Label>
+                        <Input
+                          id="qps"
+                          type="number"
+                          min="1"
+                          value={newCase.qps}
+                          onChange={(e) => setNewCase({ ...newCase, qps: parseInt(e.target.value) || 60 })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
               {/* 服务类型选择 */}
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -555,103 +670,6 @@ export function AttackCaseManagement() {
                     </div>
                   </div>
                 )}
-              </div>
-
-              {/* 链路级配置 */}
-              <div className="space-y-4">
-                <div className="border rounded-lg p-4 space-y-4">
-                  <h3 className="text-lg font-medium">链路级配置</h3>
-                  
-                  {/* 账号组选择 */}
-                  <div className="space-y-2">
-                    <Label>链路账号组</Label>
-                    <Select 
-                      value={newCase.chainConfig.accountGroup} 
-                      onValueChange={(value) => setNewCase({ 
-                        ...newCase, 
-                        chainConfig: { ...newCase.chainConfig, accountGroup: value }
-                      })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="选择链路账号组" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accountGroups.map((group) => (
-                          <SelectItem key={group.id} value={group.name}>
-                            {group.name} ({group.accountCount}个账号)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* 参数文件上传 */}
-                  <div className="space-y-2">
-                    <Label htmlFor="parameter-file">参数文件</Label>
-                    <Input
-                      id="parameter-file"
-                      type="file"
-                      accept=".json,.csv,.txt"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0] || null
-                        setNewCase({ 
-                          ...newCase, 
-                          chainConfig: { ...newCase.chainConfig, parameterFile: file }
-                        })
-                      }}
-                    />
-                    <div className="text-xs text-muted-foreground">
-                      支持JSON、CSV、TXT格式文件，用于提供额外参数
-                    </div>
-                    {newCase.chainConfig.parameterFile && (
-                      <div className="text-sm text-green-600">
-                        已选择文件: {newCase.chainConfig.parameterFile.name}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 全局变量定义 */}
-                  <div className="space-y-2">
-                    <Label htmlFor="global-variables">全局变量</Label>
-                    <Textarea
-                      id="global-variables"
-                      placeholder='定义全局变量，例如: {"baseUrl": "https://api.example.com", "timeout": 5000}'
-                      value={newCase.chainConfig.globalVariables}
-                      onChange={(e) => setNewCase({ 
-                        ...newCase, 
-                        chainConfig: { ...newCase.chainConfig, globalVariables: e.target.value }
-                      })}
-                      className="font-mono text-sm"
-                      rows={4}
-                    />
-                    <div className="text-xs text-muted-foreground">
-                      使用JSON格式定义在整个链路中可用的全局变量
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="attack-count">攻击次数</Label>
-                    <Input
-                      id="attack-count"
-                      type="number"
-                      min="1"
-                      value={newCase.attackCount}
-                      onChange={(e) => setNewCase({ ...newCase, attackCount: parseInt(e.target.value) || 1 })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="qps">QPS</Label>
-                    <Input
-                      id="qps"
-                      type="number"
-                      min="1"
-                      value={newCase.qps}
-                      onChange={(e) => setNewCase({ ...newCase, qps: parseInt(e.target.value) || 60 })}
-                    />
-                  </div>
-                </div>
               </div>
 
               <div className="flex justify-end">

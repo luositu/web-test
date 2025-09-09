@@ -20,6 +20,9 @@ This is a Next.js application with TypeScript and React that appears to be an ac
 - **Task Management**: Enhanced to load attack cases from global data store for consistency
 - **Type System**: Unified attack case types across all components for better type safety
 - **Bug Fixes**: Resolved critical data sync issues where attack cases weren't appearing across modules
+- **Chain Configuration**: Implemented chain-level configuration with account groups, parameter files, and global variables
+- **Collapsible UI**: Added expandable/collapsible chain configuration section positioned above service type selection
+- **Enhanced Workflow**: Reorganized creation flow with chain configuration as primary configuration point
 
 ## Previous Changes (September 8, 2025)
 - **Project Setup**: Configured the application to run in the Replit environment  
