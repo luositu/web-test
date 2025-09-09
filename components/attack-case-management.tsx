@@ -63,8 +63,12 @@ export function AttackCaseManagement() {
     apiInterface: "",
     parameters: "",
     description: "",
-    senderGroup: "",
-    senderAccounts: [] as string[],
+    // 链路级配置
+    chainConfig: {
+      accountGroup: "",
+      parameterFile: null as File | null,
+      globalVariables: "",
+    },
     receiverGroup: "",
     receiverAccounts: [] as string[],
     attackCount: 1,
