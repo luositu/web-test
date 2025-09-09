@@ -627,49 +627,52 @@ export function AttackCaseManagement() {
                 </div>
 
                 {/* API接口选择 */}
-                {newCase.serviceType && (
-                  <div className="space-y-2">
-                    <Label>API接口</Label>
-                    <Select 
-                      value={newCase.apiInterface} 
-                      onValueChange={(value) => setNewCase({ ...newCase, apiInterface: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="选择API接口" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getCurrentInterfaces().map((interface_) => (
-                          <SelectItem key={interface_.id} value={interface_.name}>
-                            <div className="flex items-center space-x-2">
-                              <span>{interface_.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                ({interface_.description})
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label>API接口</Label>
+                  <Select 
+                    value={newCase.apiInterface} 
+                    onValueChange={(value) => setNewCase({ ...newCase, apiInterface: value })}
+                    disabled={!newCase.serviceType}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={newCase.serviceType ? "选择API接口" : "请先选择服务类型"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getCurrentInterfaces().map((interface_) => (
+                        <SelectItem key={interface_.id} value={interface_.name}>
+                          <div className="flex items-center space-x-2">
+                            <span>{interface_.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ({interface_.description})
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!newCase.serviceType && (
+                    <div className="text-xs text-muted-foreground">
+                      请先选择服务类型以查看可用的API接口
+                    </div>
+                  )}
+                </div>
 
                 {/* 参数输入 */}
-                {newCase.apiInterface && (
-                  <div className="space-y-2">
-                    <Label htmlFor="case-parameters">接口参数 (JSON格式)</Label>
-                    <Textarea
-                      id="case-parameters"
-                      placeholder='例如: {"userId": "123", "message": "测试消息"}'
-                      value={newCase.parameters}
-                      onChange={(e) => setNewCase({ ...newCase, parameters: e.target.value })}
-                      className="font-mono text-sm"
-                      rows={6}
-                    />
-                    <div className="text-xs text-muted-foreground">
-                      请输入有效的JSON格式参数
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="case-parameters">接口参数 (JSON格式)</Label>
+                  <Textarea
+                    id="case-parameters"
+                    placeholder={newCase.apiInterface ? '例如: {"userId": "123", "message": "测试消息"}' : '请先选择API接口后输入参数'}
+                    value={newCase.parameters}
+                    onChange={(e) => setNewCase({ ...newCase, parameters: e.target.value })}
+                    className="font-mono text-sm"
+                    rows={6}
+                    disabled={!newCase.apiInterface}
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    {newCase.apiInterface ? "请输入有效的JSON格式参数" : "选择API接口后可输入相应的参数"}
                   </div>
-                )}
+                </div>
               </div>
 
               <div className="flex justify-end">
