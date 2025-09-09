@@ -678,12 +678,10 @@ export function AttackCaseManagement() {
       return
     }
 
-    const newAttackCase: AttackCase = {
-      id: Date.now().toString(),
+    const newAttackCase = {
       name: newCase.name,
       type: selectedType,
-      lastExecuted: "从未执行",
-      status: "待执行" as const,
+      status: "pending" as const,
       senderGroup: selectedSenderGroup.name,
       senderAccounts: newCase.senderAccounts,
       receiverGroup: selectedReceiverGroup?.name || "",
@@ -694,8 +692,21 @@ export function AttackCaseManagement() {
       messageContent: selectedCategory === "私信服务" ? messageContent : undefined,
     }
 
-    // 添加到用例列表
-    setAttackCases((prev) => [...prev, newAttackCase])
+    // 使用全局数据存储创建攻击用例
+    try {
+      const createdCase = dataStore.createAttackCase(newAttackCase)
+      
+      // 刷新本地状态以反映全局存储的变化
+      const updatedCases = dataStore.getAttackCases()
+      setAttackCases(updatedCases)
+    } catch (error) {
+      toast({
+        title: "创建失败",
+        description: "保存攻击用例时出错，请重试",
+        variant: "destructive",
+      })
+      return
+    }
 
     // 重置表单
     setNewCase({
@@ -733,7 +744,7 @@ export function AttackCaseManagement() {
 
     toast({
       title: "创建成功",
-      description: `攻击用例 "${newAttackCase.name}" 已创建`,
+      description: `攻击用例 "${newCase.name}" 已创建`,
     })
   }
 
