@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -67,6 +68,8 @@ interface LogEntry {
 }
 
 export function TaskManagement() {
+  const router = useRouter()
+  
   // 模拟攻击用例数据 - 实际应该从攻击用例管理组件或API获取
   const [attackCases, setAttackCases] = useState<AttackCase[]>([])
 
@@ -702,7 +705,12 @@ export function TaskManagement() {
                           <Button variant="ghost" size="sm">
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => router.push(`/tasks/${task.id}`)}
+                            title="查看任务详情"
+                          >
                             {task.status === "running" ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                           </Button>
                           <Button variant="ghost" size="sm">
