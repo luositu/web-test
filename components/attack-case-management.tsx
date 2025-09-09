@@ -508,7 +508,7 @@ export function AttackCaseManagement() {
       </div>
 
       {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardContent className="flex items-center p-6">
             <Target className="h-8 w-8 text-blue-600" />
@@ -536,17 +536,6 @@ export function AttackCaseManagement() {
               <p className="text-sm font-medium text-muted-foreground">HTTP服务</p>
               <p className="text-2xl font-bold">
                 {attackCases.filter(case_ => case_.serviceType === "HTTP").length}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center p-6">
-            <Zap className="h-8 w-8 text-purple-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">运行中</p>
-              <p className="text-2xl font-bold">
-                {attackCases.filter(case_ => case_.status === "active").length}
               </p>
             </div>
           </CardContent>
