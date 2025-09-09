@@ -470,53 +470,29 @@ export default function TaskDetailsPage() {
               </CardContent>
             </Card>
 
-            {/* 性能指标和状态 */}
-            <div className="grid grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>实时性能指标</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">当前QPS:</span>
-                      <span className="text-lg font-bold">{taskDetails.realTimeStats.currentQPS.toFixed(2)}</span>
+            {/* 攻击用例状态 */}
+            <Card>
+              <CardHeader>
+                <CardTitle>攻击用例状态</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {taskDetails.attackCases.map((caseName, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                      <span className="text-sm">{caseName}</span>
+                      <Badge 
+                        variant={taskDetails.status === "running" ? "default" : "secondary"} 
+                        className="text-xs"
+                      >
+                        {taskDetails.status === "running" ? "运行中" : 
+                         taskDetails.status === "paused" ? "已暂停" : 
+                         taskDetails.status === "completed" ? "已完成" : "待执行"}
+                      </Badge>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">平均响应时间:</span>
-                      <span className="text-lg font-bold">{taskDetails.realTimeStats.averageResponseTime.toFixed(0)}ms</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">活跃连接数:</span>
-                      <span className="text-lg font-bold">{taskDetails.realTimeStats.activeConnections}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>攻击用例状态</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {taskDetails.attackCases.map((caseName, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
-                        <span className="text-sm">{caseName}</span>
-                        <Badge 
-                          variant={taskDetails.status === "running" ? "default" : "secondary"} 
-                          className="text-xs"
-                        >
-                          {taskDetails.status === "running" ? "运行中" : 
-                           taskDetails.status === "paused" ? "已暂停" : 
-                           taskDetails.status === "completed" ? "已完成" : "待执行"}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
