@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "@/hooks/use-toast"
+import { dataStore } from "@/lib/data-store"
+import type { AttackCase as GlobalAttackCase } from "@/lib/types"
 import {
   Plus,
   Target,
@@ -29,36 +31,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-interface AttackCase {
-  id: string
-  name: string
-  type: string
-  status: "draft" | "active" | "paused" | "completed" | "待执行"
-  targetCount: number
-  successRate: number
-  createdAt: string
-  lastExecuted: string
-  senderGroup: string
-  senderAccounts: string[]
-  receiverGroup: string
-  receiverAccounts: string[]
-  attackCount: number
-  qps: number
-  accountParams?: {
-    did: string
-    deviceModel: string
-    osVersion: string
-    appVersion: string
-  }
-  messageContent?: {
-    text: string
-    imageUrl: string
-    cardContent: string
-    cardImageUrl: string
-    cardWebUrl: string
-    voiceUrl: string
-    videoUrl: string
-  }
+// 使用全局类型定义
+type AttackCase = GlobalAttackCase & {
+  status: "draft" | "active" | "paused" | "completed" | "待执行" | "pending"
+  targetCount?: number
+  successRate?: number
+  lastExecuted?: string
 }
 
 interface AccountGroup {
@@ -133,7 +111,19 @@ const attackCategories = [
 
 export function AttackCaseManagement() {
   // ... existing state variables ...
-  const [attackCases, setAttackCases] = useState([
+  const [attackCases, setAttackCases] = useState<AttackCase[]>([])
+
+  // 从全局数据存储加载攻击用例
+  useEffect(() => {
+    const loadAttackCases = () => {
+      const cases = dataStore.getAttackCases()
+      setAttackCases(cases)
+    }
+    loadAttackCases()
+  }, [])
+
+  // 旧的本地假数据，现已移除
+  /*
     {
       id: "1",
       name: "钓鱼邮件测试 - 财务部门",
