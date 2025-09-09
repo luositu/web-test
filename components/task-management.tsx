@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -32,6 +32,8 @@ import {
   Download,
   RefreshCw,
 } from "lucide-react"
+import { dataStore } from "@/lib/data-store"
+import type { AttackCase as GlobalAttackCase } from "@/lib/types"
 
 interface Task {
   id: string
@@ -47,21 +49,12 @@ interface Task {
   createdBy: string
 }
 
-interface AttackCase {
-  id: string
-  name: string
-  type: string
-  status: "draft" | "active" | "paused" | "completed" | "待执行"
-  targetCount: number
-  successRate: number
-  createdAt: string
-  lastExecuted: string
-  senderGroup: string
-  senderAccounts: string[]
-  receiverGroup: string
-  receiverAccounts: string[]
-  attackCount: number
-  qps: number
+// 使用全局攻击用例类型
+type AttackCase = GlobalAttackCase & {
+  status: "draft" | "active" | "paused" | "completed" | "待执行" | "pending"
+  targetCount?: number
+  successRate?: number
+  lastExecuted?: string
 }
 
 interface LogEntry {
@@ -75,7 +68,20 @@ interface LogEntry {
 
 export function TaskManagement() {
   // 模拟攻击用例数据 - 实际应该从攻击用例管理组件或API获取
-  const [attackCases] = useState<AttackCase[]>([
+  const [attackCases, setAttackCases] = useState<AttackCase[]>([])
+
+  // 从全局数据存储加载攻击用例
+  useEffect(() => {
+    const loadAttackCases = () => {
+      const cases = dataStore.getAttackCases()
+      setAttackCases(cases)
+    }
+    loadAttackCases()
+  }, [])
+
+  // 旧的本地假数据，现已移除
+  /*
+    [
     {
       id: "1",
       name: "钓鱼邮件测试 - 财务部门",
@@ -270,6 +276,47 @@ export function TaskManagement() {
       status: "completed",
       priority: "high",
       attackCases: ["钓鱼邮件测试", "恶意链接测试", "社交工程攻击"],
+      startTime: "2024-01-10 08:00",
+      endTime: "2024-01-12 18:00",
+      progress: 100,
+      createdAt: "2024-01-09",
+      createdBy: "安全主管",
+    },
+  */
+
+  // 模拟任务数据
+  const [tasks, setTasks] = useState<Task[]>([
+    {
+      id: "1", 
+      name: "财务部门钓鱼测试计划",
+      description: "针对财务部门的综合钓鱼邮件测试",
+      status: "running",
+      priority: "high",
+      attackCases: ["1"],
+      startTime: "2024-01-15 09:00",
+      progress: 65,
+      createdAt: "2024-01-14",
+      createdBy: "管理员",
+    },
+    {
+      id: "2",
+      name: "社交工程攻击演练",
+      description: "模拟社交工程攻击场景",
+      status: "paused",
+      priority: "medium", 
+      attackCases: ["2"],
+      startTime: "2024-01-14 14:30",
+      progress: 40,
+      createdAt: "2024-01-13",
+      createdBy: "测试员A",
+    },
+    {
+      id: "3",
+      name: "全员安全意识测试",
+      description: "公司全员安全意识评估",
+      status: "completed",
+      priority: "high",
+      attackCases: ["1", "3"],
       startTime: "2024-01-10 08:00",
       endTime: "2024-01-12 18:00",
       progress: 100,
