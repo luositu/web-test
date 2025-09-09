@@ -39,9 +39,9 @@ This is a Next.js application with TypeScript and React that appears to be an ac
 
 ### Key Features
 - Account Management (`/accounts`)
-- Attack Case Management (`/attack-cases`) with centralized data storage
+- Attack Case Management (`/attack-cases`) with tabbed interface for creating and managing attack cases
 - Task Management (`/tasks`) with synchronized attack case data and detailed execution monitoring
-- Task Details Pages (`/tasks/[id]`) with real-time status monitoring, execution logs, and task control
+- Task Details Pages (`/tasks/[id]`) with real-time status monitoring, QPS monitoring charts, and task control
 - Unified data sharing between components via lib/data-store.ts
 - API routes for data management
 - Modern UI with dark theme
