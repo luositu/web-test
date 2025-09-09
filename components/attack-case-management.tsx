@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "@/hooks/use-toast"
 import { dataStore } from "@/lib/data-store"
 import type { AttackCase, IMServiceInterface, HTTPServiceInterface } from "@/lib/types"
@@ -28,6 +28,8 @@ import {
   Settings,
   Eye,
   Play,
+  FileText,
+  List,
 } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -53,7 +55,6 @@ interface Account {
 
 export function AttackCaseManagement() {
   const [attackCases, setAttackCases] = useState<AttackCase[]>([])
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
   
   // 新用例表单状态
   const [newCase, setNewCase] = useState({
@@ -292,8 +293,6 @@ export function AttackCaseManagement() {
         attackCount: 1,
         qps: 60,
       })
-
-      setShowCreateDialog(false)
       
       toast({
         title: "创建成功",
@@ -375,23 +374,78 @@ export function AttackCaseManagement() {
 
   return (
     <div className="container mx-auto p-6 space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">攻击用例管理</h1>
-          <p className="text-muted-foreground">创建和管理IM服务和HTTP服务的攻击测试用例</p>
-        </div>
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              创建用例
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>创建攻击用例</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6 py-4">
+      {/* 页面标题 */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">攻击用例管理</h1>
+        <p className="text-muted-foreground">创建和管理IM服务和HTTP服务的攻击测试用例</p>
+      </div>
+
+      {/* 统计卡片 */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="flex items-center p-6">
+            <Target className="h-8 w-8 text-blue-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-muted-foreground">总用例</p>
+              <p className="text-2xl font-bold">{attackCases.length}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center p-6">
+            <MessageSquare className="h-8 w-8 text-green-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-muted-foreground">IM服务</p>
+              <p className="text-2xl font-bold">
+                {attackCases.filter(case_ => case_.serviceType === "IM").length}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center p-6">
+            <Globe className="h-8 w-8 text-orange-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-muted-foreground">HTTP服务</p>
+              <p className="text-2xl font-bold">
+                {attackCases.filter(case_ => case_.serviceType === "HTTP").length}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center p-6">
+            <Zap className="h-8 w-8 text-purple-600" />
+            <div className="ml-4">
+              <p className="text-sm font-medium text-muted-foreground">运行中</p>
+              <p className="text-2xl font-bold">
+                {attackCases.filter(case_ => case_.status === "active").length}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 主要内容区域 - 标签页 */}
+      <Tabs defaultValue="create" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="create" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            创建用例
+          </TabsTrigger>
+          <TabsTrigger value="list" className="flex items-center gap-2">
+            <List className="h-4 w-4" />
+            用例列表
+          </TabsTrigger>
+        </TabsList>
+
+        {/* 创建用例标签页 */}
+        <TabsContent value="create">
+          <Card>
+            <CardHeader>
+              <CardTitle>创建新的攻击用例</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
               {/* 基本信息 */}
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -542,201 +596,158 @@ export function AttackCaseManagement() {
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                  取消
-                </Button>
-                <Button onClick={handleCreateCase}>
+              <div className="flex justify-end">
+                <Button onClick={handleCreateCase} className="gap-2">
+                  <Plus className="h-4 w-4" />
                   创建用例
                 </Button>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="flex items-center p-6">
-            <Target className="h-8 w-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">总用例</p>
-              <p className="text-2xl font-bold">{attackCases.length}</p>
+        {/* 用例列表标签页 */}
+        <TabsContent value="list">
+          <div className="space-y-6">
+            {/* 搜索和筛选 */}
+            <div className="flex items-center space-x-4">
+              <div className="flex-1">
+                <Input
+                  placeholder="搜索用例名称或接口名..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <Select value={serviceTypeFilter} onValueChange={setServiceTypeFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="筛选服务类型" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部类型</SelectItem>
+                  <SelectItem value="IM">IM服务</SelectItem>
+                  <SelectItem value="HTTP">HTTP服务</SelectItem>
+                </SelectContent>
+              </Select>
+              {selectedCases.length > 0 && (
+                <Button variant="outline" onClick={handleBatchDeleteCases}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  删除选中 ({selectedCases.length})
+                </Button>
+              )}
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center p-6">
-            <MessageSquare className="h-8 w-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">IM服务</p>
-              <p className="text-2xl font-bold">
-                {attackCases.filter(case_ => case_.serviceType === "IM").length}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center p-6">
-            <Globe className="h-8 w-8 text-orange-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">HTTP服务</p>
-              <p className="text-2xl font-bold">
-                {attackCases.filter(case_ => case_.serviceType === "HTTP").length}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center p-6">
-            <Zap className="h-8 w-8 text-purple-600" />
-            <div className="ml-4">
-              <p className="text-sm font-medium text-muted-foreground">运行中</p>
-              <p className="text-2xl font-bold">
-                {attackCases.filter(case_ => case_.status === "active").length}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* 搜索和筛选 */}
-      <div className="flex items-center space-x-4">
-        <div className="flex-1">
-          <Input
-            placeholder="搜索用例名称或接口名..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Select value={serviceTypeFilter} onValueChange={setServiceTypeFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="筛选服务类型" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">全部类型</SelectItem>
-            <SelectItem value="IM">IM服务</SelectItem>
-            <SelectItem value="HTTP">HTTP服务</SelectItem>
-          </SelectContent>
-        </Select>
-        {selectedCases.length > 0 && (
-          <Button variant="outline" onClick={handleBatchDeleteCases}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            删除选中 ({selectedCases.length})
-          </Button>
-        )}
-      </div>
+            {/* 用例列表 */}
+            <Card>
+              <CardHeader>
+                <CardTitle>攻击用例列表</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={selectedCases.length === paginatedCases.length && paginatedCases.length > 0}
+                          onCheckedChange={handleSelectAllCases}
+                        />
+                      </TableHead>
+                      <TableHead>用例名称</TableHead>
+                      <TableHead>服务类型</TableHead>
+                      <TableHead>API接口</TableHead>
+                      <TableHead>状态</TableHead>
+                      <TableHead>QPS</TableHead>
+                      <TableHead>创建时间</TableHead>
+                      <TableHead>操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedCases.map((case_) => (
+                      <TableRow key={case_.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedCases.includes(case_.id)}
+                            onCheckedChange={(checked) => handleSelectCase(case_.id, checked as boolean)}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium">{case_.name}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            {case_.serviceType ? getServiceTypeIcon(case_.serviceType) : <Target className="h-4 w-4" />}
+                            <span>{case_.serviceType || "旧格式"}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span title={case_.apiInterface}>
+                            {getInterfaceDisplayName(case_.apiInterface)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusColor(case_.status)}>
+                            {case_.status === "pending" ? "待执行" :
+                             case_.status === "active" ? "运行中" :
+                             case_.status === "paused" ? "已暂停" :
+                             case_.status === "completed" ? "已完成" : 
+                             case_.status === "draft" ? "草稿" : case_.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{case_.qps}</TableCell>
+                        <TableCell>{case_.createdAt}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleDeleteCase(case_.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
 
-      {/* 用例列表 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>攻击用例列表</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={selectedCases.length === paginatedCases.length && paginatedCases.length > 0}
-                    onCheckedChange={handleSelectAllCases}
-                  />
-                </TableHead>
-                <TableHead>用例名称</TableHead>
-                <TableHead>服务类型</TableHead>
-                <TableHead>API接口</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>QPS</TableHead>
-                <TableHead>创建时间</TableHead>
-                <TableHead>操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedCases.map((case_) => (
-                <TableRow key={case_.id}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedCases.includes(case_.id)}
-                      onCheckedChange={(checked) => handleSelectCase(case_.id, checked as boolean)}
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{case_.name}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      {case_.serviceType ? getServiceTypeIcon(case_.serviceType) : <Target className="h-4 w-4" />}
-                      <span>{case_.serviceType || "旧格式"}</span>
+                {/* 分页 */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between mt-4">
+                    <div className="text-sm text-muted-foreground">
+                      显示 {startIndex + 1}-{Math.min(endIndex, filteredCases.length)} 条，共 {filteredCases.length} 条
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <span title={case_.apiInterface}>
-                      {getInterfaceDisplayName(case_.apiInterface)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusColor(case_.status)}>
-                      {case_.status === "pending" ? "待执行" :
-                       case_.status === "active" ? "运行中" :
-                       case_.status === "paused" ? "已暂停" :
-                       case_.status === "completed" ? "已完成" : 
-                       case_.status === "draft" ? "草稿" : case_.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{case_.qps}</TableCell>
-                  <TableCell>{case_.createdAt}</TableCell>
-                  <TableCell>
                     <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="outline"
                         size="sm"
-                        onClick={() => handleDeleteCase(case_.id)}
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm">
+                        {currentPage} / {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                      >
+                        <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          {/* 分页 */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <div className="text-sm text-muted-foreground">
-                显示 {startIndex + 1}-{Math.min(endIndex, filteredCases.length)} 条，共 {filteredCases.length} 条
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm">
-                  {currentPage} / {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* 删除确认对话框 */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
