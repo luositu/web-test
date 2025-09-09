@@ -557,25 +557,77 @@ export function AttackCaseManagement() {
                 )}
               </div>
 
-              {/* 账号组配置 */}
+              {/* 链路级配置 */}
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>发送账号组</Label>
-                  <Select 
-                    value={newCase.senderGroup} 
-                    onValueChange={(value) => setNewCase({ ...newCase, senderGroup: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择发送账号组" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {accountGroups.map((group) => (
-                        <SelectItem key={group.id} value={group.name}>
-                          {group.name} ({group.accountCount}个账号)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="border rounded-lg p-4 space-y-4">
+                  <h3 className="text-lg font-medium">链路级配置</h3>
+                  
+                  {/* 账号组选择 */}
+                  <div className="space-y-2">
+                    <Label>链路账号组</Label>
+                    <Select 
+                      value={newCase.chainConfig.accountGroup} 
+                      onValueChange={(value) => setNewCase({ 
+                        ...newCase, 
+                        chainConfig: { ...newCase.chainConfig, accountGroup: value }
+                      })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择链路账号组" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accountGroups.map((group) => (
+                          <SelectItem key={group.id} value={group.name}>
+                            {group.name} ({group.accountCount}个账号)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* 参数文件上传 */}
+                  <div className="space-y-2">
+                    <Label htmlFor="parameter-file">参数文件</Label>
+                    <Input
+                      id="parameter-file"
+                      type="file"
+                      accept=".json,.csv,.txt"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null
+                        setNewCase({ 
+                          ...newCase, 
+                          chainConfig: { ...newCase.chainConfig, parameterFile: file }
+                        })
+                      }}
+                    />
+                    <div className="text-xs text-muted-foreground">
+                      支持JSON、CSV、TXT格式文件，用于提供额外参数
+                    </div>
+                    {newCase.chainConfig.parameterFile && (
+                      <div className="text-sm text-green-600">
+                        已选择文件: {newCase.chainConfig.parameterFile.name}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 全局变量定义 */}
+                  <div className="space-y-2">
+                    <Label htmlFor="global-variables">全局变量</Label>
+                    <Textarea
+                      id="global-variables"
+                      placeholder='定义全局变量，例如: {"baseUrl": "https://api.example.com", "timeout": 5000}'
+                      value={newCase.chainConfig.globalVariables}
+                      onChange={(e) => setNewCase({ 
+                        ...newCase, 
+                        chainConfig: { ...newCase.chainConfig, globalVariables: e.target.value }
+                      })}
+                      className="font-mono text-sm"
+                      rows={4}
+                    />
+                    <div className="text-xs text-muted-foreground">
+                      使用JSON格式定义在整个链路中可用的全局变量
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
