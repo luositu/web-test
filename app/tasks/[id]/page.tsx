@@ -140,20 +140,53 @@ export default function TaskDetailsPage() {
     if (!taskDetails) return
     
     let newStatus: TaskDetails["status"] = taskDetails.status
+    let updatedDetails = {...taskDetails}
     
     switch (action) {
       case "start":
         newStatus = "running"
+        // 设置任务开始时间
+        updatedDetails.startTime = new Date().toLocaleString('zh-CN')
+        // 添加开始执行的日志
+        const startLog: LogEntry = {
+          id: (taskDetails.executionLogs.length + 1).toString(),
+          timestamp: new Date().toLocaleString('zh-CN'),
+          level: "info",
+          message: "任务开始执行",
+          details: `开始执行攻击用例，总计 ${taskDetails.attackCases.length} 个用例`
+        }
+        updatedDetails.executionLogs = [startLog, ...taskDetails.executionLogs]
         break
       case "pause":
         newStatus = "paused"
+        // 添加暂停日志
+        const pauseLog: LogEntry = {
+          id: (taskDetails.executionLogs.length + 1).toString(),
+          timestamp: new Date().toLocaleString('zh-CN'),
+          level: "warning",
+          message: "任务执行暂停",
+          details: "用户手动暂停了任务执行"
+        }
+        updatedDetails.executionLogs = [pauseLog, ...taskDetails.executionLogs]
         break
       case "stop":
         newStatus = "completed"
+        // 设置结束时间
+        updatedDetails.endTime = new Date().toLocaleString('zh-CN')
+        // 添加停止日志
+        const stopLog: LogEntry = {
+          id: (taskDetails.executionLogs.length + 1).toString(),
+          timestamp: new Date().toLocaleString('zh-CN'),
+          level: "info",
+          message: "任务执行完成",
+          details: "用户手动停止了任务执行"
+        }
+        updatedDetails.executionLogs = [stopLog, ...taskDetails.executionLogs]
         break
     }
     
-    setTaskDetails({...taskDetails, status: newStatus})
+    updatedDetails.status = newStatus
+    setTaskDetails(updatedDetails)
   }
 
   const getStatusBadge = (status: TaskDetails["status"]) => {
@@ -282,7 +315,10 @@ export default function TaskDetailsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {taskDetails.realTimeStats.successRate.toFixed(1)}%
+              {taskDetails.totalTargets > 0 && (taskDetails.successfulAttacks + taskDetails.failedAttacks) > 0
+                ? ((taskDetails.successfulAttacks / (taskDetails.successfulAttacks + taskDetails.failedAttacks)) * 100).toFixed(1)
+                : "0.0"
+              }%
             </div>
             <p className="text-xs text-muted-foreground">
               成功 {taskDetails.successfulAttacks} / 失败 {taskDetails.failedAttacks}
@@ -385,8 +421,13 @@ export default function TaskDetailsPage() {
                   {taskDetails.attackCases.map((caseName, index) => (
                     <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
                       <span className="text-sm">{caseName}</span>
-                      <Badge variant="default" className="text-xs">
-                        运行中
+                      <Badge 
+                        variant={taskDetails.status === "running" ? "default" : "secondary"} 
+                        className="text-xs"
+                      >
+                        {taskDetails.status === "running" ? "运行中" : 
+                         taskDetails.status === "paused" ? "已暂停" : 
+                         taskDetails.status === "completed" ? "已完成" : "待执行"}
                       </Badge>
                     </div>
                   ))}
