@@ -7,6 +7,8 @@ This is a Next.js application with TypeScript and React that appears to be an ac
 - **Task Details Page**: Created comprehensive task execution status page with real-time monitoring
 - **Navigation Enhancement**: Added navigation from task list run buttons to detailed task pages
 - **Real-time Monitoring**: Implemented live task statistics, performance metrics, and execution logs
+- **QPS Time Chart**: Added QPS-Time 2D chart visualization for real-time performance monitoring
+- **Manual Task Control**: Tasks now require manual start instead of auto-execution
 - **Data Synchronization**: Implemented centralized data storage system using lib/data-store.ts
 - **Architecture Update**: Replaced isolated component states with global data sharing
 - **Attack Case Management**: Updated to use shared data store for creating and managing attack cases
