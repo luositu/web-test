@@ -4,6 +4,9 @@
 This is a Next.js application with TypeScript and React that appears to be an account management dashboard. It includes features for managing accounts, attack cases, and tasks. The application uses modern UI components from Radix UI and is styled with Tailwind CSS.
 
 ## Recent Changes (September 9, 2025)
+- **Task Details Page**: Created comprehensive task execution status page with real-time monitoring
+- **Navigation Enhancement**: Added navigation from task list run buttons to detailed task pages
+- **Real-time Monitoring**: Implemented live task statistics, performance metrics, and execution logs
 - **Data Synchronization**: Implemented centralized data storage system using lib/data-store.ts
 - **Architecture Update**: Replaced isolated component states with global data sharing
 - **Attack Case Management**: Updated to use shared data store for creating and managing attack cases
@@ -30,7 +33,8 @@ This is a Next.js application with TypeScript and React that appears to be an ac
 ### Key Features
 - Account Management (`/accounts`)
 - Attack Case Management (`/attack-cases`) with centralized data storage
-- Task Management (`/tasks`) with synchronized attack case data
+- Task Management (`/tasks`) with synchronized attack case data and detailed execution monitoring
+- Task Details Pages (`/tasks/[id]`) with real-time status monitoring, execution logs, and task control
 - Unified data sharing between components via lib/data-store.ts
 - API routes for data management
 - Modern UI with dark theme
@@ -45,9 +49,10 @@ This is a Next.js application with TypeScript and React that appears to be an ac
 
 ### File Structure
 - `app/` - Next.js App Router pages and API routes
+  - `tasks/[id]/page.tsx` - Dynamic task details page with real-time monitoring
 - `components/` - Reusable UI components including Radix UI primitives
   - `attack-case-management.tsx` - Attack case creation and management with global data integration
-  - `task-management.tsx` - Task creation and management with shared attack case data
+  - `task-management.tsx` - Task creation and management with shared attack case data and navigation
 - `lib/` - Utility functions, type definitions, and global data storage
   - `data-store.ts` - Centralized data store for cross-component data sharing
   - `types.ts` - Unified type definitions for attack cases and other data structures
