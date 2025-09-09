@@ -328,8 +328,9 @@ export function AttackCaseManagement() {
       attackCount: 1,
       qps: 60,
     },
-  ])
+  */
 
+  // 其他状态变量保持不变
   const [newCase, setNewCase] = useState({
     name: "",
     category: "",
