@@ -247,10 +247,10 @@ export function AttackCaseManagement() {
       return false
     }
 
-    if (!newCase.senderGroup) {
+    if (!newCase.chainConfig.accountGroup) {
       toast({
         title: "创建失败",
-        description: "请选择发送账号组",
+        description: "请选择链路账号组",
         variant: "destructive",
       })
       return false
@@ -270,8 +270,7 @@ export function AttackCaseManagement() {
       parameters: newCase.parameters,
       description: newCase.description,
       status: "pending" as const,
-      senderGroup: newCase.senderGroup,
-      senderAccounts: newCase.senderAccounts,
+      chainConfig: newCase.chainConfig,
       receiverGroup: newCase.receiverGroup,
       receiverAccounts: newCase.receiverAccounts,
       attackCount: newCase.attackCount,
@@ -290,8 +289,11 @@ export function AttackCaseManagement() {
         apiInterface: "",
         parameters: "",
         description: "",
-        senderGroup: "",
-        senderAccounts: [],
+        chainConfig: {
+          accountGroup: "",
+          parameterFile: null,
+          globalVariables: "",
+        },
         receiverGroup: "",
         receiverAccounts: [],
         attackCount: 1,
