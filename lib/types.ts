@@ -30,11 +30,17 @@ export interface AttackCase {
   lastExecuted?: string
   lastRun?: string
   createdBy?: string
-  senderGroup: string
-  senderAccounts: string[]
+  // 新的链路级配置
+  chainConfig?: {
+    accountGroup: string
+    parameterFile?: File | null
+    globalVariables: string
+  }
+  // 保留原有字段以保持向后兼容
+  senderGroup?: string
+  senderAccounts?: string[]
   receiverGroup?: string
   receiverAccounts: string[]
-  // 保留原有字段以保持向后兼容
   type?: string
   targetAccounts?: string[]
   messageTemplate?: string
