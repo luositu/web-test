@@ -638,36 +638,30 @@ export function AttackCaseManagement() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>服务类型</Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Card 
-                      className={`cursor-pointer transition-colors ${
-                        newCase.serviceType === "IM" ? "border-primary bg-primary/5" : "hover:bg-muted/50"
-                      }`}
-                      onClick={() => setNewCase({ ...newCase, serviceType: "IM", apiInterface: "" })}
-                    >
-                      <CardContent className="flex items-center space-x-3 p-4">
-                        <MessageSquare className="h-5 w-5" />
-                        <div>
-                          <div className="font-medium">IM服务</div>
-                          <div className="text-sm text-muted-foreground">即时通讯相关接口</div>
+                  <Select 
+                    value={newCase.serviceType} 
+                    onValueChange={(value) => setNewCase({ ...newCase, serviceType: value as "IM" | "HTTP", apiInterface: "" })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="选择服务类型" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="IM">
+                        <div className="flex items-center space-x-2">
+                          <MessageSquare className="h-4 w-4" />
+                          <span>IM服务</span>
+                          <span className="text-xs text-muted-foreground">即时通讯相关接口</span>
                         </div>
-                      </CardContent>
-                    </Card>
-                    <Card 
-                      className={`cursor-pointer transition-colors ${
-                        newCase.serviceType === "HTTP" ? "border-primary bg-primary/5" : "hover:bg-muted/50"
-                      }`}
-                      onClick={() => setNewCase({ ...newCase, serviceType: "HTTP", apiInterface: "" })}
-                    >
-                      <CardContent className="flex items-center space-x-3 p-4">
-                        <Globe className="h-5 w-5" />
-                        <div>
-                          <div className="font-medium">HTTP服务</div>
-                          <div className="text-sm text-muted-foreground">HTTP API接口</div>
+                      </SelectItem>
+                      <SelectItem value="HTTP">
+                        <div className="flex items-center space-x-2">
+                          <Globe className="h-4 w-4" />
+                          <span>HTTP服务</span>
+                          <span className="text-xs text-muted-foreground">HTTP API接口</span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* API接口选择 */}
