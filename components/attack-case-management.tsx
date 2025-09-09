@@ -147,7 +147,10 @@ export function AttackCaseManagement() {
   }
 
   // 获取接口显示名称（截断长接口名）
-  const getInterfaceDisplayName = (interfaceName: string, maxLength = 10) => {
+  const getInterfaceDisplayName = (interfaceName: string | undefined, maxLength = 10) => {
+    if (!interfaceName) {
+      return "未设置"
+    }
     if (interfaceName.length <= maxLength) {
       return interfaceName
     }
@@ -159,16 +162,25 @@ export function AttackCaseManagement() {
     // 搜索查询筛选
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase()
-      if (!case_.name.toLowerCase().includes(searchLower) && 
-          !case_.apiInterface?.toLowerCase().includes(searchLower)) {
+      const nameMatch = case_.name.toLowerCase().includes(searchLower)
+      const interfaceMatch = case_.apiInterface?.toLowerCase().includes(searchLower) || false
+      const typeMatch = case_.type?.toLowerCase().includes(searchLower) || false // 兼容旧数据的type字段
+      
+      if (!nameMatch && !interfaceMatch && !typeMatch) {
         return false
       }
     }
 
     // 服务类型筛选
     if (serviceTypeFilter && serviceTypeFilter !== "all") {
-      if (case_.serviceType !== serviceTypeFilter) {
-        return false
+      // 处理新旧数据格式兼容性
+      if (case_.serviceType) {
+        if (case_.serviceType !== serviceTypeFilter) {
+          return false
+        }
+      } else {
+        // 对于旧数据，根据type字段推断serviceType
+        return false // 暂时过滤掉没有serviceType的旧数据
       }
     }
 
@@ -652,8 +664,8 @@ export function AttackCaseManagement() {
                   <TableCell className="font-medium">{case_.name}</TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      {getServiceTypeIcon(case_.serviceType)}
-                      <span>{case_.serviceType}</span>
+                      {case_.serviceType ? getServiceTypeIcon(case_.serviceType) : <Target className="h-4 w-4" />}
+                      <span>{case_.serviceType || "旧格式"}</span>
                     </div>
                   </TableCell>
                   <TableCell>
