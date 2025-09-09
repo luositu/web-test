@@ -119,9 +119,27 @@ export function AttackCaseManagement() {
   
   // 其他UI状态
   const [selectedCases, setSelectedCases] = useState<string[]>([])
-  const [editingCase, setEditingCase] = useState<string | null>(null)
+  const [editingCase, setEditingCase] = useState<AttackCase | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [caseToDelete, setCaseToDelete] = useState<string | null>(null)
+  
+  // 编辑用例表单状态
+  const [editCase, setEditCase] = useState({
+    name: "",
+    serviceType: "" as "IM" | "HTTP" | "",
+    apiInterface: "",
+    parameters: "",
+    description: "",
+    chainConfig: {
+      accountGroup: "",
+      parameterFile: null as File | null,
+      globalVariables: "",
+    },
+    receiverGroup: "",
+    receiverAccounts: [] as string[],
+    attackCount: 1,
+    qps: 60,
+  })
 
   // 模拟账号组数据
   const accountGroups: AccountGroup[] = [
@@ -347,6 +365,73 @@ export function AttackCaseManagement() {
         variant: "destructive",
       })
     }
+  }
+
+  // 编辑用例
+  const handleEditCase = (caseData: AttackCase) => {
+    setEditingCase(caseData)
+    setEditCase({
+      name: caseData.name,
+      serviceType: caseData.serviceType,
+      apiInterface: caseData.apiInterface || "",
+      parameters: caseData.parameters,
+      description: caseData.description || "",
+      chainConfig: {
+        accountGroup: caseData.chainConfig?.accountGroup || "",
+        parameterFile: caseData.chainConfig?.parameterFile || null,
+        globalVariables: caseData.chainConfig?.globalVariables || "",
+      },
+      receiverGroup: caseData.receiverGroup || "",
+      receiverAccounts: caseData.receiverAccounts || [],
+      attackCount: caseData.attackCount,
+      qps: caseData.qps,
+    })
+  }
+
+  // 保存编辑
+  const handleSaveEdit = () => {
+    if (!editingCase) return
+
+    try {
+      // 更新攻击用例数据
+      const updatedCase = {
+        ...editingCase,
+        name: editCase.name,
+        serviceType: editCase.serviceType as "IM" | "HTTP",
+        apiInterface: editCase.apiInterface,
+        parameters: editCase.parameters,
+        description: editCase.description,
+        chainConfig: editCase.chainConfig,
+        receiverGroup: editCase.receiverGroup,
+        receiverAccounts: editCase.receiverAccounts,
+        attackCount: editCase.attackCount,
+        qps: editCase.qps,
+      }
+
+      // 在全局数据存储中更新
+      dataStore.updateAttackCase(updatedCase.id, updatedCase)
+      const updatedCases = dataStore.getAttackCases()
+      setAttackCases(updatedCases)
+
+      // 关闭编辑模式
+      setEditingCase(null)
+      
+      toast({
+        title: "更新成功",
+        description: `攻击用例 "${editCase.name}" 已更新`,
+      })
+    } catch (error) {
+      toast({
+        title: "更新失败",
+        description: "保存攻击用例时出错，请重试",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // 取消编辑
+  const handleCancelEdit = () => {
+    setEditingCase(null)
   }
 
   // 删除用例
@@ -725,6 +810,165 @@ export function AttackCaseManagement() {
 
         {/* 用例列表标签页 */}
         <TabsContent value="list">
+          {editingCase ? (
+            // 编辑模式
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>编辑攻击用例</CardTitle>
+                <div className="space-x-2">
+                  <Button variant="outline" onClick={handleCancelEdit}>
+                    取消
+                  </Button>
+                  <Button onClick={handleSaveEdit}>
+                    保存
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* 基本信息 */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-case-name">用例名称</Label>
+                    <Input
+                      id="edit-case-name"
+                      placeholder="输入用例名称"
+                      value={editCase.name}
+                      onChange={(e) => setEditCase({ ...editCase, name: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-case-description">用例描述</Label>
+                    <Textarea
+                      id="edit-case-description"
+                      placeholder="输入用例描述（可选）"
+                      value={editCase.description}
+                      onChange={(e) => setEditCase({ ...editCase, description: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                {/* 链路级配置 */}
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full justify-between">
+                      <span className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        链路级配置
+                      </span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-4 mt-4">
+                    <div className="border rounded-lg p-4 space-y-4">
+                      {/* 攻击次数和QPS */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-attack-count">攻击次数</Label>
+                          <Input
+                            id="edit-attack-count"
+                            type="number"
+                            min="1"
+                            value={editCase.attackCount}
+                            onChange={(e) => setEditCase({ ...editCase, attackCount: parseInt(e.target.value) || 1 })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-qps">QPS</Label>
+                          <Input
+                            id="edit-qps"
+                            type="number"
+                            min="1"
+                            value={editCase.qps}
+                            onChange={(e) => setEditCase({ ...editCase, qps: parseInt(e.target.value) || 60 })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+
+                {/* 服务类型选择 */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>服务类型</Label>
+                    <Select 
+                      value={editCase.serviceType} 
+                      onValueChange={(value) => setEditCase({ ...editCase, serviceType: value as "IM" | "HTTP", apiInterface: "" })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择服务类型" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="IM">
+                          <div className="flex items-center space-x-2">
+                            <MessageSquare className="h-4 w-4" />
+                            <span>IM服务</span>
+                            <span className="text-xs text-muted-foreground">即时通讯相关接口</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="HTTP">
+                          <div className="flex items-center space-x-2">
+                            <Globe className="h-4 w-4" />
+                            <span>HTTP服务</span>
+                            <span className="text-xs text-muted-foreground">HTTP API接口</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* API接口选择 */}
+                  <div className="space-y-2">
+                    <Label>API接口</Label>
+                    <Select 
+                      value={editCase.apiInterface} 
+                      onValueChange={(value) => setEditCase({ ...editCase, apiInterface: value })}
+                      disabled={!editCase.serviceType}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={editCase.serviceType ? "选择API接口" : "请先选择服务类型"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(editCase.serviceType === "IM" ? IM_INTERFACES : HTTP_INTERFACES).map((interface_) => (
+                          <SelectItem key={interface_.id} value={interface_.name}>
+                            <div className="flex items-center space-x-2">
+                              <span>{interface_.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                ({interface_.description})
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {!editCase.serviceType && (
+                      <div className="text-xs text-muted-foreground">
+                        请先选择服务类型以查看可用的API接口
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 参数输入 */}
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-case-parameters">接口参数 (JSON格式)</Label>
+                    <Textarea
+                      id="edit-case-parameters"
+                      placeholder={editCase.apiInterface ? '例如: {"userId": "123", "message": "测试消息"}' : '请先选择API接口后输入参数'}
+                      value={editCase.parameters}
+                      onChange={(e) => setEditCase({ ...editCase, parameters: e.target.value })}
+                      className="font-mono text-sm"
+                      rows={6}
+                      disabled={!editCase.apiInterface}
+                    />
+                    <div className="text-xs text-muted-foreground">
+                      {editCase.apiInterface ? "请输入有效的JSON格式参数" : "选择API接口后可输入相应的参数"}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
           <div className="space-y-6">
             {/* 搜索和筛选 */}
             <div className="flex items-center space-x-4">
@@ -804,7 +1048,11 @@ export function AttackCaseManagement() {
                             <Button variant="ghost" size="sm">
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEditCase(case_)}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button 
@@ -853,6 +1101,7 @@ export function AttackCaseManagement() {
               </CardContent>
             </Card>
           </div>
+          )}
         </TabsContent>
       </Tabs>
 
