@@ -861,6 +861,85 @@ export function AttackCaseManagement() {
                   </CollapsibleTrigger>
                   <CollapsibleContent className="space-y-4 mt-4">
                     <div className="border rounded-lg p-4 space-y-4">
+                      {/* 账号组选择 */}
+                      <div className="space-y-2">
+                        <Label>链路账号组</Label>
+                        <Select 
+                          value={editCase.chainConfig.accountGroup} 
+                          onValueChange={(value) => {
+                            const updatedGlobalVars = updateGlobalVariables(value)
+                            setEditCase({ 
+                              ...editCase, 
+                              chainConfig: { 
+                                ...editCase.chainConfig, 
+                                accountGroup: value,
+                                globalVariables: updatedGlobalVars
+                              }
+                            })
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="选择链路账号组" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {accountGroups.map((group) => (
+                              <SelectItem key={group.id} value={group.name}>
+                                {group.name} ({group.accountCount}个账号)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {editCase.chainConfig.accountGroup && (
+                          <div className="text-sm text-blue-600">
+                            已自动生成 uid 参数：{generateUidList(editCase.chainConfig.accountGroup)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 参数文件上传 */}
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-parameter-file">参数文件</Label>
+                        <Input
+                          id="edit-parameter-file"
+                          type="file"
+                          accept=".json,.csv,.txt"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null
+                            setEditCase({ 
+                              ...editCase, 
+                              chainConfig: { ...editCase.chainConfig, parameterFile: file }
+                            })
+                          }}
+                        />
+                        <div className="text-xs text-muted-foreground">
+                          支持JSON、CSV、TXT格式文件，用于提供额外参数
+                        </div>
+                        {editCase.chainConfig.parameterFile && (
+                          <div className="text-sm text-green-600">
+                            已选择文件: {editCase.chainConfig.parameterFile.name}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 全局变量定义 */}
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-global-variables">全局变量</Label>
+                        <Textarea
+                          id="edit-global-variables"
+                          placeholder='全局变量会自动包含uid参数，您可以添加其他变量，例如: {"baseUrl": "https://api.example.com", "timeout": 5000}'
+                          value={editCase.chainConfig.globalVariables}
+                          onChange={(e) => setEditCase({ 
+                            ...editCase, 
+                            chainConfig: { ...editCase.chainConfig, globalVariables: e.target.value }
+                          })}
+                          className="font-mono text-sm"
+                          rows={6}
+                        />
+                        <div className="text-xs text-muted-foreground">
+                          选择账号组后会自动生成 uid 参数（Python列表格式），在接口参数中可使用 ${"uid"} 引用该列表
+                        </div>
+                      </div>
+
                       {/* 攻击次数和QPS */}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
