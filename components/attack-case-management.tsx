@@ -79,6 +79,38 @@ export function AttackCaseManagement() {
     qps: 60,
   })
 
+  // 生成账号组的 uid 列表
+  const generateUidList = (groupName: string): string => {
+    const selectedGroup = accountGroups.find(group => group.name === groupName)
+    if (!selectedGroup || !selectedGroup.accounts.length) {
+      return "[]"
+    }
+    
+    const uidList = selectedGroup.accounts.map(account => `"${account.uid}"`)
+    return `[${uidList.join(", ")}]`
+  }
+
+  // 更新全局变量中的 uid 参数
+  const updateGlobalVariables = (groupName: string) => {
+    const uidList = generateUidList(groupName)
+    let globalVars = newCase.chainConfig.globalVariables
+    
+    try {
+      // 尝试解析现有的全局变量
+      const parsedVars = globalVars ? JSON.parse(globalVars) : {}
+      parsedVars.uid = uidList
+      
+      // 重新生成格式化的 JSON
+      globalVars = JSON.stringify(parsedVars, null, 2)
+    } catch {
+      // 如果解析失败，创建新的全局变量对象
+      const varsObject: any = { uid: uidList }
+      globalVars = JSON.stringify(varsObject, null, 2)
+    }
+    
+    return globalVars
+  }
+
   // 列表筛选和分页状态
   const [searchTerm, setSearchTerm] = useState("")
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("")
@@ -501,10 +533,17 @@ export function AttackCaseManagement() {
                       <Label>链路账号组</Label>
                       <Select 
                         value={newCase.chainConfig.accountGroup} 
-                        onValueChange={(value) => setNewCase({ 
-                          ...newCase, 
-                          chainConfig: { ...newCase.chainConfig, accountGroup: value }
-                        })}
+                        onValueChange={(value) => {
+                          const updatedGlobalVars = updateGlobalVariables(value)
+                          setNewCase({ 
+                            ...newCase, 
+                            chainConfig: { 
+                              ...newCase.chainConfig, 
+                              accountGroup: value,
+                              globalVariables: updatedGlobalVars
+                            }
+                          })
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="选择链路账号组" />
@@ -517,6 +556,11 @@ export function AttackCaseManagement() {
                           ))}
                         </SelectContent>
                       </Select>
+                      {newCase.chainConfig.accountGroup && (
+                        <div className="text-sm text-blue-600">
+                          已自动生成 uid 参数：{generateUidList(newCase.chainConfig.accountGroup)}
+                        </div>
+                      )}
                     </div>
 
                     {/* 参数文件上传 */}
@@ -549,17 +593,17 @@ export function AttackCaseManagement() {
                       <Label htmlFor="global-variables">全局变量</Label>
                       <Textarea
                         id="global-variables"
-                        placeholder='定义全局变量，例如: {"baseUrl": "https://api.example.com", "timeout": 5000}'
+                        placeholder='全局变量会自动包含uid参数，您可以添加其他变量，例如: {"baseUrl": "https://api.example.com", "timeout": 5000}'
                         value={newCase.chainConfig.globalVariables}
                         onChange={(e) => setNewCase({ 
                           ...newCase, 
                           chainConfig: { ...newCase.chainConfig, globalVariables: e.target.value }
                         })}
                         className="font-mono text-sm"
-                        rows={4}
+                        rows={6}
                       />
                       <div className="text-xs text-muted-foreground">
-                        使用JSON格式定义在整个链路中可用的全局变量
+                        选择账号组后会自动生成 uid 参数（Python列表格式），在接口参数中可使用 ${"{uid}"} 引用该列表
                       </div>
                     </div>
 
