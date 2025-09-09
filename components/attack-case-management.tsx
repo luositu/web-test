@@ -771,7 +771,6 @@ export function AttackCaseManagement() {
                       <TableHead>用例名称</TableHead>
                       <TableHead>服务类型</TableHead>
                       <TableHead>API接口</TableHead>
-                      <TableHead>状态</TableHead>
                       <TableHead>QPS</TableHead>
                       <TableHead>创建时间</TableHead>
                       <TableHead>操作</TableHead>
@@ -797,15 +796,6 @@ export function AttackCaseManagement() {
                           <span title={case_.apiInterface}>
                             {getInterfaceDisplayName(case_.apiInterface)}
                           </span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusColor(case_.status)}>
-                            {case_.status === "pending" ? "待执行" :
-                             case_.status === "active" ? "运行中" :
-                             case_.status === "paused" ? "已暂停" :
-                             case_.status === "completed" ? "已完成" : 
-                             case_.status === "draft" ? "草稿" : case_.status}
-                          </Badge>
                         </TableCell>
                         <TableCell>{case_.qps}</TableCell>
                         <TableCell>{case_.createdAt}</TableCell>
