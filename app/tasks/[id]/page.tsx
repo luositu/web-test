@@ -23,6 +23,7 @@ import {
   Eye,
   Download
 } from "lucide-react"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 interface TaskDetails {
   id: string
@@ -59,6 +60,12 @@ interface RealTimeStats {
   activeConnections: number
 }
 
+interface QPSDataPoint {
+  time: string
+  qps: number
+  timestamp: number
+}
+
 export default function TaskDetailsPage() {
   const params = useParams()
   const router = useRouter()
@@ -66,6 +73,7 @@ export default function TaskDetailsPage() {
   
   const [taskDetails, setTaskDetails] = useState<TaskDetails | null>(null)
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null)
+  const [qpsHistory, setQpsHistory] = useState<QPSDataPoint[]>([])
 
   // 模拟任务详情数据
   useEffect(() => {
@@ -107,6 +115,10 @@ export default function TaskDetailsPage() {
   useEffect(() => {
     if (taskDetails?.status === "running") {
       const interval = setInterval(() => {
+        const now = new Date()
+        const timeStr = now.toLocaleTimeString('zh-CN')
+        const timestamp = now.getTime()
+        
         setTaskDetails(prev => {
           if (!prev) return null
           
@@ -114,6 +126,7 @@ export default function TaskDetailsPage() {
           const newProgress = Math.min(prev.progress + Math.random() * 5, 100)
           const newSuccessful = prev.successfulAttacks + (Math.random() > 0.7 ? 1 : 0)
           const newFailed = prev.failedAttacks + (Math.random() > 0.9 ? 1 : 0)
+          const newQPS = 2 + Math.random() * 2
           
           return {
             ...prev,
@@ -122,17 +135,29 @@ export default function TaskDetailsPage() {
             failedAttacks: newFailed,
             realTimeStats: {
               ...prev.realTimeStats,
-              currentQPS: 2 + Math.random() * 2,
+              currentQPS: newQPS,
               averageResponseTime: 700 + Math.random() * 300,
               successRate: newSuccessful / (newSuccessful + newFailed + (prev.totalTargets - newSuccessful - newFailed)) * 100,
               activeConnections: 5 + Math.floor(Math.random() * 10)
             }
           }
         })
+
+        // 更新QPS历史数据
+        setQpsHistory(prev => {
+          const newData = [...prev, { time: timeStr, qps: 2 + Math.random() * 2, timestamp }]
+          // 只保留最近50个数据点
+          return newData.slice(-50)
+        })
       }, 2000)
       
       setRefreshInterval(interval)
       return () => clearInterval(interval)
+    } else {
+      // 任务不运行时清空QPS历史数据
+      if (taskDetails?.status === "pending") {
+        setQpsHistory([])
+      }
     }
   }, [taskDetails?.status])
 
@@ -389,51 +414,109 @@ export default function TaskDetailsPage() {
         </TabsList>
 
         <TabsContent value="realtime">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-6">
+            {/* QPS时间图表 */}
             <Card>
               <CardHeader>
-                <CardTitle>实时性能指标</CardTitle>
+                <CardTitle className="flex items-center space-x-2">
+                  <TrendingUp className="h-5 w-5" />
+                  <span>QPS 实时监控</span>
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">当前QPS:</span>
-                    <span className="text-lg font-bold">{taskDetails.realTimeStats.currentQPS.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">平均响应时间:</span>
-                    <span className="text-lg font-bold">{taskDetails.realTimeStats.averageResponseTime.toFixed(0)}ms</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">活跃连接数:</span>
-                    <span className="text-lg font-bold">{taskDetails.realTimeStats.activeConnections}</span>
-                  </div>
+                <div className="h-64 w-full">
+                  {qpsHistory.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={qpsHistory} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis 
+                          dataKey="time" 
+                          tick={{ fontSize: 12 }}
+                          interval="preserveStartEnd"
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 12 }}
+                          domain={['dataMin - 0.5', 'dataMax + 0.5']}
+                        />
+                        <Tooltip 
+                          labelStyle={{ color: '#000' }}
+                          contentStyle={{ 
+                            backgroundColor: '#fff',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px'
+                          }}
+                          formatter={(value: number) => [value.toFixed(2), 'QPS']}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="qps" 
+                          stroke="#2563eb" 
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 4 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-muted-foreground">
+                      <div className="text-center">
+                        <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg font-medium">等待任务启动</p>
+                        <p className="text-sm">启动任务后将显示QPS实时数据图表</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>攻击用例状态</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {taskDetails.attackCases.map((caseName, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
-                      <span className="text-sm">{caseName}</span>
-                      <Badge 
-                        variant={taskDetails.status === "running" ? "default" : "secondary"} 
-                        className="text-xs"
-                      >
-                        {taskDetails.status === "running" ? "运行中" : 
-                         taskDetails.status === "paused" ? "已暂停" : 
-                         taskDetails.status === "completed" ? "已完成" : "待执行"}
-                      </Badge>
+            {/* 性能指标和状态 */}
+            <div className="grid grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>实时性能指标</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">当前QPS:</span>
+                      <span className="text-lg font-bold">{taskDetails.realTimeStats.currentQPS.toFixed(2)}</span>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">平均响应时间:</span>
+                      <span className="text-lg font-bold">{taskDetails.realTimeStats.averageResponseTime.toFixed(0)}ms</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">活跃连接数:</span>
+                      <span className="text-lg font-bold">{taskDetails.realTimeStats.activeConnections}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>攻击用例状态</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {taskDetails.attackCases.map((caseName, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-muted rounded">
+                        <span className="text-sm">{caseName}</span>
+                        <Badge 
+                          variant={taskDetails.status === "running" ? "default" : "secondary"} 
+                          className="text-xs"
+                        >
+                          {taskDetails.status === "running" ? "运行中" : 
+                           taskDetails.status === "paused" ? "已暂停" : 
+                           taskDetails.status === "completed" ? "已完成" : "待执行"}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </TabsContent>
 
