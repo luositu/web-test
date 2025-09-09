@@ -73,61 +73,29 @@ export default function TaskDetailsPage() {
       id: taskId,
       name: "财务部门钓鱼测试计划",
       description: "针对财务部门的综合钓鱼邮件测试，评估员工安全意识水平",
-      status: "running",
+      status: "pending",
       priority: "high",
       attackCases: ["钓鱼邮件测试 - 财务部门", "恶意链接测试 - 内部系统"],
-      startTime: "2024-01-15 09:00:00",
-      progress: 65,
+      startTime: "尚未开始",
+      progress: 0,
       createdAt: "2024-01-14",
       createdBy: "管理员",
       totalTargets: 45,
-      successfulAttacks: 12,
-      failedAttacks: 3,
+      successfulAttacks: 0,
+      failedAttacks: 0,
       realTimeStats: {
-        currentQPS: 2.5,
-        averageResponseTime: 850,
-        successRate: 26.7,
-        activeConnections: 8
+        currentQPS: 0,
+        averageResponseTime: 0,
+        successRate: 0,
+        activeConnections: 0
       },
       executionLogs: [
         {
           id: "1",
-          timestamp: "2024-01-15 14:30:25",
+          timestamp: "2024-01-14 16:30:00",
           level: "info",
-          message: "任务执行进度更新",
-          details: "已完成 65% 的攻击用例执行",
-          attackCase: "钓鱼邮件测试"
-        },
-        {
-          id: "2", 
-          timestamp: "2024-01-15 14:25:12",
-          level: "success",
-          message: "攻击用例执行成功",
-          details: "钓鱼邮件已成功发送至目标账号 user@company.com",
-          attackCase: "钓鱼邮件测试"
-        },
-        {
-          id: "3",
-          timestamp: "2024-01-15 14:20:08",
-          level: "warning", 
-          message: "目标响应异常",
-          details: "目标账号 admin@company.com 响应时间超过预期阈值",
-          attackCase: "恶意链接测试"
-        },
-        {
-          id: "4",
-          timestamp: "2024-01-15 14:15:33",
-          level: "error",
-          message: "连接失败",
-          details: "无法连接到目标系统 10.0.1.100，连接超时",
-          attackCase: "恶意链接测试"
-        },
-        {
-          id: "5",
-          timestamp: "2024-01-15 14:10:15",
-          level: "info",
-          message: "任务开始执行",
-          details: "开始执行攻击用例，总计 2 个用例",
+          message: "任务创建完成",
+          details: "攻击任务已创建，等待手动启动",
         }
       ]
     }
