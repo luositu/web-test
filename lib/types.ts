@@ -181,6 +181,55 @@ export interface HTTPServiceInterface {
   description: string
   method: "GET" | "POST" | "PUT" | "DELETE"
   requiredParams: string[]
+  // 扩展配置支持自定义接口
+  isCustom?: boolean
+  url?: string
+  headers?: Record<string, string>
+  body?: string
+  signature?: {
+    type: string
+    config: Record<string, any>
+  }
+  assertions?: {
+    statusCode?: number
+    responseBody?: string
+    responseTime?: number
+  }
+}
+
+// 自定义HTTP接口配置
+export interface CustomHTTPInterface {
+  id: string
+  name: string
+  serviceUnderTest: string
+  url: string
+  method: "GET" | "POST"
+  headers: Record<string, string>
+  body: string
+  signature?: {
+    type: "none" | "kuaishou" | "custom"
+    config: Record<string, any>
+  }
+  assertions: {
+    statusCode: number
+    responseBodyPattern?: string
+    maxResponseTime?: number
+  }
+  businessCode?: string
+}
+
+// 签名类型定义
+export interface SignatureType {
+  id: string
+  name: string
+  description: string
+  configFields: {
+    name: string
+    label: string
+    type: "text" | "password" | "number" | "select"
+    required: boolean
+    options?: string[]
+  }[]
 }
 
 // 服务接口数据
@@ -259,5 +308,67 @@ export const HTTP_INTERFACES: HTTPServiceInterface[] = [
     description: "根据关键词搜索用户",
     method: "GET",
     requiredParams: ["keyword", "token"]
+  }
+]
+
+// 签名类型配置
+export const SIGNATURE_TYPES: SignatureType[] = [
+  {
+    id: "none",
+    name: "无验签",
+    description: "不使用接口签名",
+    configFields: []
+  },
+  {
+    id: "kuaishou",
+    name: "快手验签",
+    description: "快手平台标准验签方式",
+    configFields: [
+      {
+        name: "appId",
+        label: "应用ID",
+        type: "text",
+        required: true
+      },
+      {
+        name: "secretKey",
+        label: "密钥",
+        type: "password",
+        required: true
+      },
+      {
+        name: "algorithm",
+        label: "算法",
+        type: "select",
+        required: true,
+        options: ["MD5", "SHA256", "HMAC-SHA256"]
+      }
+    ]
+  },
+  {
+    id: "custom",
+    name: "自定义验签",
+    description: "自定义验签规则",
+    configFields: [
+      {
+        name: "signatureHeader",
+        label: "签名请求头",
+        type: "text",
+        required: true
+      },
+      {
+        name: "algorithm",
+        label: "签名算法",
+        type: "select",
+        required: true,
+        options: ["MD5", "SHA1", "SHA256", "HMAC-MD5", "HMAC-SHA1", "HMAC-SHA256"]
+      },
+      {
+        name: "secretKey",
+        label: "签名密钥",
+        type: "password",
+        required: true
+      }
+    ]
   }
 ]

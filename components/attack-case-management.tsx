@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { toast } from "@/hooks/use-toast"
 import { dataStore } from "@/lib/data-store"
-import type { AttackCase, IMServiceInterface, HTTPServiceInterface } from "@/lib/types"
+import type { AttackCase, IMServiceInterface, HTTPServiceInterface, CustomHTTPInterface } from "@/lib/types"
 import { IM_INTERFACES, HTTP_INTERFACES } from "@/lib/types"
+import { HTTPInterfaceConfig } from "@/components/http-interface-config"
 import {
   Plus,
   Target,
@@ -59,6 +60,8 @@ interface Account {
 export function AttackCaseManagement() {
   const [attackCases, setAttackCases] = useState<AttackCase[]>([])
   const [isChainConfigOpen, setIsChainConfigOpen] = useState(false)
+  const [showHTTPConfig, setShowHTTPConfig] = useState(false)
+  const [httpInterfaceConfig, setHttpInterfaceConfig] = useState<CustomHTTPInterface | null>(null)
   
   // 新用例表单状态
   const [newCase, setNewCase] = useState({
@@ -434,6 +437,28 @@ export function AttackCaseManagement() {
     setEditingCase(null)
   }
 
+  // 处理HTTP接口配置保存
+  const handleHTTPConfigSave = (config: CustomHTTPInterface) => {
+    setHttpInterfaceConfig(config)
+    setNewCase({
+      ...newCase,
+      apiInterface: config.name,
+      parameters: JSON.stringify({
+        url: config.url,
+        method: config.method,
+        headers: config.headers,
+        body: config.body,
+        signature: config.signature,
+        assertions: config.assertions
+      }, null, 2)
+    })
+    setShowHTTPConfig(false)
+    toast({
+      title: "配置已保存",
+      description: `HTTP接口配置 "${config.name}" 已应用到当前用例`,
+    })
+  }
+
   // 删除用例
   const handleDeleteCase = (caseId: string) => {
     setCaseToDelete(caseId)
@@ -741,30 +766,66 @@ export function AttackCaseManagement() {
                 {/* API接口选择 */}
                 <div className="space-y-2">
                   <Label>API接口</Label>
-                  <Select 
-                    value={newCase.apiInterface} 
-                    onValueChange={(value) => setNewCase({ ...newCase, apiInterface: value })}
-                    disabled={!newCase.serviceType}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={newCase.serviceType ? "选择API接口" : "请先选择服务类型"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getCurrentInterfaces().map((interface_) => (
-                        <SelectItem key={interface_.id} value={interface_.name}>
-                          <div className="flex items-center space-x-2">
-                            <span>{interface_.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              ({interface_.description})
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Select 
+                      value={newCase.apiInterface} 
+                      onValueChange={(value) => setNewCase({ ...newCase, apiInterface: value })}
+                      disabled={!newCase.serviceType}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder={newCase.serviceType ? "选择API接口" : "请先选择服务类型"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getCurrentInterfaces().map((interface_) => (
+                          <SelectItem key={interface_.id} value={interface_.name}>
+                            <div className="flex items-center space-x-2">
+                              <span>{interface_.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                ({interface_.description})
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    {/* HTTP服务高级配置按钮 */}
+                    {newCase.serviceType === "HTTP" && (
+                      <Dialog open={showHTTPConfig} onOpenChange={setShowHTTPConfig}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="shrink-0">
+                            <Settings className="h-4 w-4 mr-1" />
+                            高级配置
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>HTTP接口详细配置</DialogTitle>
+                          </DialogHeader>
+                          <HTTPInterfaceConfig
+                            onSave={handleHTTPConfigSave}
+                            initialConfig={httpInterfaceConfig || undefined}
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
+                  
                   {!newCase.serviceType && (
                     <div className="text-xs text-muted-foreground">
                       请先选择服务类型以查看可用的API接口
+                    </div>
+                  )}
+                  
+                  {newCase.serviceType === "HTTP" && (
+                    <div className="text-xs text-blue-600">
+                      💡 使用"高级配置"可以设置自定义HTTP接口、请求头、请求体和签名验证
+                    </div>
+                  )}
+                  
+                  {httpInterfaceConfig && (
+                    <div className="text-xs text-green-600 p-2 bg-green-50 rounded border">
+                      ✅ 已配置自定义HTTP接口: {httpInterfaceConfig.name} ({httpInterfaceConfig.method})
                     </div>
                   )}
                 </div>
