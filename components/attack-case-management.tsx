@@ -68,6 +68,8 @@ export function AttackCaseManagement() {
   const [httpMethod, setHttpMethod] = useState<"GET" | "POST">("POST")
   const [httpUrl, setHttpUrl] = useState("")
   const [selectedSignature, setSelectedSignature] = useState("none")
+  const [customInterfaceName, setCustomInterfaceName] = useState("")
+  const [showCustomInterfaceInput, setShowCustomInterfaceInput] = useState(false)
   
   // 新用例表单状态
   const [newCase, setNewCase] = useState({
@@ -373,6 +375,8 @@ export function AttackCaseManagement() {
       setHttpMethod("POST")
       setHttpUrl("")
       setSelectedSignature("none")
+      setCustomInterfaceName("")
+      setShowCustomInterfaceInput(false)
       
       toast({
         title: "创建成功",
@@ -518,6 +522,20 @@ export function AttackCaseManagement() {
 
   // 处理平台接口选择
   const handlePlatformInterfaceSelect = (interfaceName: string) => {
+    // 处理自定义接口
+    if (interfaceName === "自定义接口") {
+      setShowCustomInterfaceInput(true)
+      setNewCase({
+        ...newCase,
+        apiInterface: "",
+        parameters: ""
+      })
+      return
+    }
+
+    setShowCustomInterfaceInput(false)
+    setCustomInterfaceName("")
+    
     const selectedInterface = HTTP_INTERFACES.find(i => i.name === interfaceName)
     if (selectedInterface) {
       // 自动填充请求方法
@@ -526,7 +544,7 @@ export function AttackCaseManagement() {
       
       let bodyContent = ""
       // 自动填充请求体模板（仅对POST请求）
-      if (selectedInterface.method === "POST") {
+      if (selectedInterface.method === "POST" && selectedInterface.requiredParams.length > 0) {
         const bodyTemplate: Record<string, string> = {}
         selectedInterface.requiredParams.forEach(param => {
           bodyTemplate[param] = `\${${param}}`
@@ -556,6 +574,33 @@ export function AttackCaseManagement() {
           body: bodyContent,
           signature: selectedSignature,
           requiredParams: selectedInterface.requiredParams
+        }, null, 2)
+      })
+    }
+  }
+
+  // 处理自定义接口名称变化
+  const handleCustomInterfaceNameChange = (value: string) => {
+    setCustomInterfaceName(value)
+    if (value.trim()) {
+      // 解析当前请求头
+      let headersObj = {}
+      try {
+        headersObj = JSON.parse(httpHeaders)
+      } catch (error) {
+        headersObj = {}
+      }
+
+      setNewCase({
+        ...newCase,
+        apiInterface: value,
+        parameters: JSON.stringify({
+          url: httpUrl,
+          method: httpMethod,
+          headers: headersObj,
+          body: httpBody,
+          signature: selectedSignature,
+          isCustomInterface: true
         }, null, 2)
       })
     }
@@ -869,7 +914,7 @@ export function AttackCaseManagement() {
                 <div className="space-y-2">
                   <Label>API接口</Label>
                   <Select 
-                    value={newCase.apiInterface} 
+                    value={showCustomInterfaceInput ? "自定义接口" : newCase.apiInterface} 
                     onValueChange={(value) => {
                       if (newCase.serviceType === "HTTP") {
                         handlePlatformInterfaceSelect(value)
@@ -895,6 +940,23 @@ export function AttackCaseManagement() {
                       ))}
                     </SelectContent>
                   </Select>
+                  
+                  {/* 自定义接口名称输入 */}
+                  {showCustomInterfaceInput && (
+                    <div className="space-y-2">
+                      <Label htmlFor="custom-interface-name">自定义接口名称</Label>
+                      <Input
+                        id="custom-interface-name"
+                        value={customInterfaceName}
+                        onChange={(e) => handleCustomInterfaceNameChange(e.target.value)}
+                        placeholder="请输入自定义接口名称"
+                        className="w-full"
+                      />
+                      <div className="text-xs text-muted-foreground">
+                        输入您要测试的自定义HTTP接口名称
+                      </div>
+                    </div>
+                  )}
                   
                   {!newCase.serviceType && (
                     <div className="text-xs text-muted-foreground">

@@ -308,6 +308,13 @@ export const HTTP_INTERFACES: HTTPServiceInterface[] = [
     description: "根据关键词搜索用户",
     method: "GET",
     requiredParams: ["keyword", "token"]
+  },
+  {
+    id: "http_custom",
+    name: "自定义接口",
+    description: "用户自定义HTTP接口",
+    method: "POST",
+    requiredParams: []
   }
 ]
 
