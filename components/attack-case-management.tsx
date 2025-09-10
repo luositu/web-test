@@ -1182,10 +1182,25 @@ export function AttackCaseManagement() {
                           {selectedUrlNode && (
                             <div className="p-2 bg-primary/10 border border-primary/20 rounded-md">
                               <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium">
-                                  已选择: {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.name}
-                                </span>
-                                <Badge variant="outline" className="text-xs">
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <span className="text-sm font-medium">已选择:</span>
+                                  <span className="text-sm font-mono text-foreground truncate">
+                                    {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.name}
+                                  </span>
+                                </div>
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs px-2 py-0.5 h-5 font-mono font-medium flex-shrink-0 ${
+                                    (() => {
+                                      const method = URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.method;
+                                      return method === 'GET' ? 'border-green-500 text-green-700 dark:text-green-400' :
+                                             method === 'POST' ? 'border-blue-500 text-blue-700 dark:text-blue-400' :
+                                             method === 'PUT' ? 'border-orange-500 text-orange-700 dark:text-orange-400' :
+                                             method === 'DELETE' ? 'border-red-500 text-red-700 dark:text-red-400' :
+                                             'border-gray-500 text-gray-700 dark:text-gray-400';
+                                    })()
+                                  }`}
+                                >
                                   {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.method || "GET"}
                                 </Badge>
                               </div>
@@ -1792,10 +1807,25 @@ export function AttackCaseManagement() {
             {selectedUrlNode && (
               <div className="p-3 bg-primary/10 border border-primary/20 rounded-md">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">
-                    当前选择: {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.name}
-                  </span>
-                  <Badge variant="outline" className="text-xs">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <span className="text-sm font-medium">当前选择:</span>
+                    <span className="text-sm font-mono text-foreground truncate">
+                      {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.name}
+                    </span>
+                  </div>
+                  <Badge 
+                    variant="outline" 
+                    className={`text-xs px-2 py-0.5 h-5 font-mono font-medium flex-shrink-0 ${
+                      (() => {
+                        const method = URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.method;
+                        return method === 'GET' ? 'border-green-500 text-green-700 dark:text-green-400' :
+                               method === 'POST' ? 'border-blue-500 text-blue-700 dark:text-blue-400' :
+                               method === 'PUT' ? 'border-orange-500 text-orange-700 dark:text-orange-400' :
+                               method === 'DELETE' ? 'border-red-500 text-red-700 dark:text-red-400' :
+                               'border-gray-500 text-gray-700 dark:text-gray-400';
+                      })()
+                    }`}
+                  >
                     {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.method || "GET"}
                   </Badge>
                 </div>
