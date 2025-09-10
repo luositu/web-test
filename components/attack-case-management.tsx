@@ -12,9 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { toast } from "@/hooks/use-toast"
 import { dataStore } from "@/lib/data-store"
-import type { AttackCase, IMServiceInterface, HTTPServiceInterface, CustomHTTPInterface } from "@/lib/types"
+import type { AttackCase, IMServiceInterface, HTTPServiceInterface } from "@/lib/types"
 import { IM_INTERFACES, HTTP_INTERFACES } from "@/lib/types"
-import { HTTPInterfaceConfig } from "@/components/http-interface-config"
 import {
   Plus,
   Target,
@@ -60,8 +59,15 @@ interface Account {
 export function AttackCaseManagement() {
   const [attackCases, setAttackCases] = useState<AttackCase[]>([])
   const [isChainConfigOpen, setIsChainConfigOpen] = useState(false)
-  const [showHTTPConfig, setShowHTTPConfig] = useState(false)
-  const [httpInterfaceConfig, setHttpInterfaceConfig] = useState<CustomHTTPInterface | null>(null)
+  const [httpHeaders, setHttpHeaders] = useState<Record<string, string>>({
+    "Content-Type": "application/json",
+    "User-Agent": "Attack-Case-Tool/1.0"
+  })
+  const [httpBody, setHttpBody] = useState("")
+  const [httpMethod, setHttpMethod] = useState<"GET" | "POST">("POST")
+  const [httpUrl, setHttpUrl] = useState("")
+  const [newHeaderKey, setNewHeaderKey] = useState("")
+  const [newHeaderValue, setNewHeaderValue] = useState("")
   
   // 新用例表单状态
   const [newCase, setNewCase] = useState({
@@ -357,6 +363,17 @@ export function AttackCaseManagement() {
         qps: 60,
       })
       
+      // 重置HTTP配置状态
+      setHttpHeaders({
+        "Content-Type": "application/json",
+        "User-Agent": "Attack-Case-Tool/1.0"
+      })
+      setHttpBody("")
+      setHttpMethod("POST")
+      setHttpUrl("")
+      setNewHeaderKey("")
+      setNewHeaderValue("")
+      
       toast({
         title: "创建成功",
         description: `攻击用例 "${newCase.name}" 已创建`,
@@ -437,26 +454,64 @@ export function AttackCaseManagement() {
     setEditingCase(null)
   }
 
-  // 处理HTTP接口配置保存
-  const handleHTTPConfigSave = (config: CustomHTTPInterface) => {
-    setHttpInterfaceConfig(config)
-    setNewCase({
-      ...newCase,
-      apiInterface: config.name,
-      parameters: JSON.stringify({
-        url: config.url,
-        method: config.method,
-        headers: config.headers,
-        body: config.body,
-        signature: config.signature,
-        assertions: config.assertions
-      }, null, 2)
+  // 添加请求头
+  const addHttpHeader = () => {
+    if (newHeaderKey && newHeaderValue) {
+      setHttpHeaders({
+        ...httpHeaders,
+        [newHeaderKey]: newHeaderValue
+      })
+      setNewHeaderKey("")
+      setNewHeaderValue("")
+    }
+  }
+
+  // 删除请求头
+  const removeHttpHeader = (key: string) => {
+    const newHeaders = { ...httpHeaders }
+    delete newHeaders[key]
+    setHttpHeaders(newHeaders)
+  }
+
+  // 更新请求头值
+  const updateHttpHeaderValue = (key: string, value: string) => {
+    setHttpHeaders({
+      ...httpHeaders,
+      [key]: value
     })
-    setShowHTTPConfig(false)
-    toast({
-      title: "配置已保存",
-      description: `HTTP接口配置 "${config.name}" 已应用到当前用例`,
-    })
+  }
+
+  // 处理平台接口选择
+  const handlePlatformInterfaceSelect = (interfaceName: string) => {
+    const selectedInterface = HTTP_INTERFACES.find(i => i.name === interfaceName)
+    if (selectedInterface) {
+      // 自动填充请求方法
+      setHttpMethod(selectedInterface.method === "PUT" || selectedInterface.method === "DELETE" ? "POST" : selectedInterface.method as "GET" | "POST")
+      
+      // 自动填充请求体模板（仅对POST请求）
+      if (selectedInterface.method === "POST") {
+        const bodyTemplate: Record<string, string> = {}
+        selectedInterface.requiredParams.forEach(param => {
+          bodyTemplate[param] = `\${${param}}`
+        })
+        setHttpBody(JSON.stringify(bodyTemplate, null, 2))
+      } else {
+        setHttpBody("")
+      }
+      
+      // 更新参数字段，包含HTTP配置
+      setNewCase({
+        ...newCase,
+        apiInterface: interfaceName,
+        parameters: JSON.stringify({
+          url: httpUrl,
+          method: selectedInterface.method === "PUT" || selectedInterface.method === "DELETE" ? "POST" : selectedInterface.method,
+          headers: httpHeaders,
+          body: selectedInterface.method === "POST" ? JSON.stringify(bodyTemplate, null, 2) : "",
+          requiredParams: selectedInterface.requiredParams
+        }, null, 2)
+      })
+    }
   }
 
   // 删除用例
@@ -766,86 +821,267 @@ export function AttackCaseManagement() {
                 {/* API接口选择 */}
                 <div className="space-y-2">
                   <Label>API接口</Label>
-                  <div className="flex gap-2">
-                    <Select 
-                      value={newCase.apiInterface} 
-                      onValueChange={(value) => setNewCase({ ...newCase, apiInterface: value })}
-                      disabled={!newCase.serviceType}
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder={newCase.serviceType ? "选择API接口" : "请先选择服务类型"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getCurrentInterfaces().map((interface_) => (
-                          <SelectItem key={interface_.id} value={interface_.name}>
-                            <div className="flex items-center space-x-2">
-                              <span>{interface_.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                ({interface_.description})
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    
-                    {/* HTTP服务高级配置按钮 */}
-                    {newCase.serviceType === "HTTP" && (
-                      <Dialog open={showHTTPConfig} onOpenChange={setShowHTTPConfig}>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" className="shrink-0">
-                            <Settings className="h-4 w-4 mr-1" />
-                            高级配置
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>HTTP接口详细配置</DialogTitle>
-                          </DialogHeader>
-                          <HTTPInterfaceConfig
-                            onSave={handleHTTPConfigSave}
-                            initialConfig={httpInterfaceConfig || undefined}
-                          />
-                        </DialogContent>
-                      </Dialog>
-                    )}
-                  </div>
+                  <Select 
+                    value={newCase.apiInterface} 
+                    onValueChange={(value) => {
+                      if (newCase.serviceType === "HTTP") {
+                        handlePlatformInterfaceSelect(value)
+                      } else {
+                        setNewCase({ ...newCase, apiInterface: value })
+                      }
+                    }}
+                    disabled={!newCase.serviceType}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={newCase.serviceType ? "选择API接口" : "请先选择服务类型"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getCurrentInterfaces().map((interface_) => (
+                        <SelectItem key={interface_.id} value={interface_.name}>
+                          <div className="flex items-center space-x-2">
+                            <span>{interface_.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ({interface_.description})
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   
                   {!newCase.serviceType && (
                     <div className="text-xs text-muted-foreground">
                       请先选择服务类型以查看可用的API接口
                     </div>
                   )}
-                  
-                  {newCase.serviceType === "HTTP" && (
-                    <div className="text-xs text-blue-600">
-                      💡 使用"高级配置"可以设置自定义HTTP接口、请求头、请求体和签名验证
-                    </div>
-                  )}
-                  
-                  {httpInterfaceConfig && (
-                    <div className="text-xs text-green-600 p-2 bg-green-50 rounded border">
-                      ✅ 已配置自定义HTTP接口: {httpInterfaceConfig.name} ({httpInterfaceConfig.method})
-                    </div>
-                  )}
                 </div>
 
-                {/* 参数输入 */}
-                <div className="space-y-2">
-                  <Label htmlFor="case-parameters">接口参数 (JSON格式)</Label>
-                  <Textarea
-                    id="case-parameters"
-                    placeholder={newCase.apiInterface ? '例如: {"userId": "123", "message": "测试消息"}' : '请先选择API接口后输入参数'}
-                    value={newCase.parameters}
-                    onChange={(e) => setNewCase({ ...newCase, parameters: e.target.value })}
-                    className="font-mono text-sm"
-                    rows={6}
-                    disabled={!newCase.apiInterface}
-                  />
-                  <div className="text-xs text-muted-foreground">
-                    {newCase.apiInterface ? "请输入有效的JSON格式参数" : "选择API接口后可输入相应的参数"}
+                {/* HTTP服务配置 */}
+                {newCase.serviceType === "HTTP" && (
+                  <div className="space-y-6 p-4 border rounded-lg bg-muted/30">
+                    <h3 className="text-lg font-medium">HTTP接口配置</h3>
+                    
+                    {/* URL和方法配置 */}
+                    <div className="grid grid-cols-4 gap-4">
+                      <div className="col-span-3 space-y-2">
+                        <Label htmlFor="http-url">接口URL</Label>
+                        <Input
+                          id="http-url"
+                          placeholder="https://api.example.com/endpoint"
+                          value={httpUrl}
+                          onChange={(e) => {
+                            setHttpUrl(e.target.value)
+                            setNewCase({
+                              ...newCase,
+                              parameters: JSON.stringify({
+                                url: e.target.value,
+                                method: httpMethod,
+                                headers: httpHeaders,
+                                body: httpBody
+                              }, null, 2)
+                            })
+                          }}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="http-method">请求方法</Label>
+                        <Select value={httpMethod} onValueChange={(value) => {
+                          setHttpMethod(value as "GET" | "POST")
+                          if (value === "GET") {
+                            setHttpBody("")
+                          }
+                          setNewCase({
+                            ...newCase,
+                            parameters: JSON.stringify({
+                              url: httpUrl,
+                              method: value,
+                              headers: httpHeaders,
+                              body: value === "GET" ? "" : httpBody
+                            }, null, 2)
+                          })
+                        }}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="POST">POST</SelectItem>
+                            <SelectItem value="GET">GET</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* 请求头配置 */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Label>请求头配置</Label>
+                        <Badge variant="secondary">{Object.keys(httpHeaders).length} 个请求头</Badge>
+                      </div>
+                      
+                      {/* 现有请求头列表 */}
+                      <div className="space-y-2">
+                        {Object.entries(httpHeaders).map(([key, value]) => (
+                          <div key={key} className="flex items-center gap-2 p-2 border rounded">
+                            <Input
+                              value={key}
+                              onChange={(e) => {
+                                const newHeaders = { ...httpHeaders }
+                                delete newHeaders[key]
+                                newHeaders[e.target.value] = value
+                                setHttpHeaders(newHeaders)
+                                setNewCase({
+                                  ...newCase,
+                                  parameters: JSON.stringify({
+                                    url: httpUrl,
+                                    method: httpMethod,
+                                    headers: newHeaders,
+                                    body: httpBody
+                                  }, null, 2)
+                                })
+                              }}
+                              className="flex-1"
+                              placeholder="请求头名称"
+                            />
+                            <span>:</span>
+                            <Input
+                              value={value}
+                              onChange={(e) => {
+                                updateHttpHeaderValue(key, e.target.value)
+                                const newHeaders = { ...httpHeaders, [key]: e.target.value }
+                                setNewCase({
+                                  ...newCase,
+                                  parameters: JSON.stringify({
+                                    url: httpUrl,
+                                    method: httpMethod,
+                                    headers: newHeaders,
+                                    body: httpBody
+                                  }, null, 2)
+                                })
+                              }}
+                              className="flex-1"
+                              placeholder="请求头值"
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                removeHttpHeader(key)
+                                const newHeaders = { ...httpHeaders }
+                                delete newHeaders[key]
+                                setNewCase({
+                                  ...newCase,
+                                  parameters: JSON.stringify({
+                                    url: httpUrl,
+                                    method: httpMethod,
+                                    headers: newHeaders,
+                                    body: httpBody
+                                  }, null, 2)
+                                })
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* 添加新请求头 */}
+                      <div className="flex items-center gap-2 p-3 border-2 border-dashed rounded">
+                        <Input
+                          value={newHeaderKey}
+                          onChange={(e) => setNewHeaderKey(e.target.value)}
+                          placeholder="请求头名称"
+                          className="flex-1"
+                        />
+                        <span>:</span>
+                        <Input
+                          value={newHeaderValue}
+                          onChange={(e) => setNewHeaderValue(e.target.value)}
+                          placeholder="请求头值"
+                          className="flex-1"
+                        />
+                        <Button 
+                          onClick={() => {
+                            addHttpHeader()
+                            const newHeaders = { ...httpHeaders, [newHeaderKey]: newHeaderValue }
+                            setNewCase({
+                              ...newCase,
+                              parameters: JSON.stringify({
+                                url: httpUrl,
+                                method: httpMethod,
+                                headers: newHeaders,
+                                body: httpBody
+                              }, null, 2)
+                            })
+                          }} 
+                          disabled={!newHeaderKey || !newHeaderValue}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* 请求体配置 */}
+                    {httpMethod === "POST" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="http-body">请求体 (JSON格式)</Label>
+                        <Textarea
+                          id="http-body"
+                          value={httpBody}
+                          onChange={(e) => {
+                            setHttpBody(e.target.value)
+                            setNewCase({
+                              ...newCase,
+                              parameters: JSON.stringify({
+                                url: httpUrl,
+                                method: httpMethod,
+                                headers: httpHeaders,
+                                body: e.target.value
+                              }, null, 2)
+                            })
+                          }}
+                          placeholder='例如: {"username": "${username}", "password": "${password}"}'
+                          className="font-mono text-sm"
+                          rows={6}
+                        />
+                        <div className="text-xs text-muted-foreground">
+                          支持JSON格式，可以使用变量引用如 ${"{uid}"}。选择平台接口时会自动填充模板。
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 自定义接口模板提示 */}
+                    {!newCase.apiInterface && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                        <div className="text-sm font-medium text-blue-800 mb-2">自定义接口模板参考</div>
+                        <div className="text-xs text-blue-600 space-y-1">
+                          <div><strong>URL示例:</strong> https://api.example.com/login</div>
+                          <div><strong>请求头示例:</strong> Content-Type: application/json, Authorization: Bearer token</div>
+                          <div><strong>请求体示例:</strong> {`{"username": "\${username}", "password": "\${password}"}`}</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
+
+                {/* IM服务参数输入 */}
+                {newCase.serviceType === "IM" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="case-parameters">接口参数 (JSON格式)</Label>
+                    <Textarea
+                      id="case-parameters"
+                      placeholder={newCase.apiInterface ? '例如: {"userId": "123", "message": "测试消息"}' : '请先选择API接口后输入参数'}
+                      value={newCase.parameters}
+                      onChange={(e) => setNewCase({ ...newCase, parameters: e.target.value })}
+                      className="font-mono text-sm"
+                      rows={6}
+                      disabled={!newCase.apiInterface}
+                    />
+                    <div className="text-xs text-muted-foreground">
+                      {newCase.apiInterface ? "请输入有效的JSON格式参数" : "选择API接口后可输入相应的参数"}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end">
