@@ -59,15 +59,14 @@ interface Account {
 export function AttackCaseManagement() {
   const [attackCases, setAttackCases] = useState<AttackCase[]>([])
   const [isChainConfigOpen, setIsChainConfigOpen] = useState(false)
-  const [httpHeaders, setHttpHeaders] = useState<Record<string, string>>({
+  const [httpHeaders, setHttpHeaders] = useState<string>(JSON.stringify({
     "Content-Type": "application/json",
     "User-Agent": "Attack-Case-Tool/1.0"
-  })
+  }, null, 2))
+  const [httpHeadersError, setHttpHeadersError] = useState("")
   const [httpBody, setHttpBody] = useState("")
   const [httpMethod, setHttpMethod] = useState<"GET" | "POST">("POST")
   const [httpUrl, setHttpUrl] = useState("")
-  const [newHeaderKey, setNewHeaderKey] = useState("")
-  const [newHeaderValue, setNewHeaderValue] = useState("")
   
   // 新用例表单状态
   const [newCase, setNewCase] = useState({
@@ -364,15 +363,14 @@ export function AttackCaseManagement() {
       })
       
       // 重置HTTP配置状态
-      setHttpHeaders({
+      setHttpHeaders(JSON.stringify({
         "Content-Type": "application/json",
         "User-Agent": "Attack-Case-Tool/1.0"
-      })
+      }, null, 2))
+      setHttpHeadersError("")
       setHttpBody("")
       setHttpMethod("POST")
       setHttpUrl("")
-      setNewHeaderKey("")
-      setNewHeaderValue("")
       
       toast({
         title: "创建成功",
@@ -454,31 +452,45 @@ export function AttackCaseManagement() {
     setEditingCase(null)
   }
 
-  // 添加请求头
-  const addHttpHeader = () => {
-    if (newHeaderKey && newHeaderValue) {
-      setHttpHeaders({
-        ...httpHeaders,
-        [newHeaderKey]: newHeaderValue
-      })
-      setNewHeaderKey("")
-      setNewHeaderValue("")
+  // 验证JSON格式
+  const validateHttpHeaders = (jsonString: string): boolean => {
+    try {
+      JSON.parse(jsonString)
+      setHttpHeadersError("")
+      return true
+    } catch (error) {
+      setHttpHeadersError("请输入有效的JSON格式")
+      return false
     }
   }
 
-  // 删除请求头
-  const removeHttpHeader = (key: string) => {
-    const newHeaders = { ...httpHeaders }
-    delete newHeaders[key]
-    setHttpHeaders(newHeaders)
+  // 处理请求头变化
+  const handleHttpHeadersChange = (value: string) => {
+    setHttpHeaders(value)
+    validateHttpHeaders(value)
+    
+    // 如果JSON有效，更新参数
+    if (validateHttpHeaders(value)) {
+      updateParametersWithHeaders(value)
+    }
   }
 
-  // 更新请求头值
-  const updateHttpHeaderValue = (key: string, value: string) => {
-    setHttpHeaders({
-      ...httpHeaders,
-      [key]: value
-    })
+  // 更新参数中的请求头
+  const updateParametersWithHeaders = (headersJson: string) => {
+    try {
+      const headersObj = JSON.parse(headersJson)
+      setNewCase({
+        ...newCase,
+        parameters: JSON.stringify({
+          url: httpUrl,
+          method: httpMethod,
+          headers: headersObj,
+          body: httpBody
+        }, null, 2)
+      })
+    } catch (error) {
+      // JSON无效时不更新参数
+    }
   }
 
   // 处理平台接口选择
@@ -502,6 +514,14 @@ export function AttackCaseManagement() {
         setHttpBody("")
       }
       
+      // 解析当前请求头
+      let headersObj = {}
+      try {
+        headersObj = JSON.parse(httpHeaders)
+      } catch (error) {
+        headersObj = {}
+      }
+      
       // 更新参数字段，包含HTTP配置
       setNewCase({
         ...newCase,
@@ -509,7 +529,7 @@ export function AttackCaseManagement() {
         parameters: JSON.stringify({
           url: httpUrl,
           method: method,
-          headers: httpHeaders,
+          headers: headersObj,
           body: bodyContent,
           requiredParams: selectedInterface.requiredParams
         }, null, 2)
@@ -874,15 +894,20 @@ export function AttackCaseManagement() {
                           value={httpUrl}
                           onChange={(e) => {
                             setHttpUrl(e.target.value)
-                            setNewCase({
-                              ...newCase,
-                              parameters: JSON.stringify({
-                                url: e.target.value,
-                                method: httpMethod,
-                                headers: httpHeaders,
-                                body: httpBody
-                              }, null, 2)
-                            })
+                            try {
+                              const headersObj = JSON.parse(httpHeaders)
+                              setNewCase({
+                                ...newCase,
+                                parameters: JSON.stringify({
+                                  url: e.target.value,
+                                  method: httpMethod,
+                                  headers: headersObj,
+                                  body: httpBody
+                                }, null, 2)
+                              })
+                            } catch (error) {
+                              // JSON格式错误时不更新参数
+                            }
                           }}
                         />
                       </div>
@@ -893,15 +918,20 @@ export function AttackCaseManagement() {
                           if (value === "GET") {
                             setHttpBody("")
                           }
-                          setNewCase({
-                            ...newCase,
-                            parameters: JSON.stringify({
-                              url: httpUrl,
-                              method: value,
-                              headers: httpHeaders,
-                              body: value === "GET" ? "" : httpBody
-                            }, null, 2)
-                          })
+                          try {
+                            const headersObj = JSON.parse(httpHeaders)
+                            setNewCase({
+                              ...newCase,
+                              parameters: JSON.stringify({
+                                url: httpUrl,
+                                method: value,
+                                headers: headersObj,
+                                body: value === "GET" ? "" : httpBody
+                              }, null, 2)
+                            })
+                          } catch (error) {
+                            // JSON格式错误时不更新参数
+                          }
                         }}>
                           <SelectTrigger>
                             <SelectValue />
@@ -915,112 +945,23 @@ export function AttackCaseManagement() {
                     </div>
 
                     {/* 请求头配置 */}
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label>请求头配置</Label>
-                        <Badge variant="secondary">{Object.keys(httpHeaders).length} 个请求头</Badge>
-                      </div>
-                      
-                      {/* 现有请求头列表 */}
-                      <div className="space-y-2">
-                        {Object.entries(httpHeaders).map(([key, value]) => (
-                          <div key={key} className="flex items-center gap-2 p-2 border rounded">
-                            <Input
-                              value={key}
-                              onChange={(e) => {
-                                const newHeaders = { ...httpHeaders }
-                                delete newHeaders[key]
-                                newHeaders[e.target.value] = value
-                                setHttpHeaders(newHeaders)
-                                setNewCase({
-                                  ...newCase,
-                                  parameters: JSON.stringify({
-                                    url: httpUrl,
-                                    method: httpMethod,
-                                    headers: newHeaders,
-                                    body: httpBody
-                                  }, null, 2)
-                                })
-                              }}
-                              className="flex-1"
-                              placeholder="请求头名称"
-                            />
-                            <span>:</span>
-                            <Input
-                              value={value}
-                              onChange={(e) => {
-                                updateHttpHeaderValue(key, e.target.value)
-                                const newHeaders = { ...httpHeaders, [key]: e.target.value }
-                                setNewCase({
-                                  ...newCase,
-                                  parameters: JSON.stringify({
-                                    url: httpUrl,
-                                    method: httpMethod,
-                                    headers: newHeaders,
-                                    body: httpBody
-                                  }, null, 2)
-                                })
-                              }}
-                              className="flex-1"
-                              placeholder="请求头值"
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                removeHttpHeader(key)
-                                const newHeaders = { ...httpHeaders }
-                                delete newHeaders[key]
-                                setNewCase({
-                                  ...newCase,
-                                  parameters: JSON.stringify({
-                                    url: httpUrl,
-                                    method: httpMethod,
-                                    headers: newHeaders,
-                                    body: httpBody
-                                  }, null, 2)
-                                })
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* 添加新请求头 */}
-                      <div className="flex items-center gap-2 p-3 border-2 border-dashed rounded">
-                        <Input
-                          value={newHeaderKey}
-                          onChange={(e) => setNewHeaderKey(e.target.value)}
-                          placeholder="请求头名称"
-                          className="flex-1"
-                        />
-                        <span>:</span>
-                        <Input
-                          value={newHeaderValue}
-                          onChange={(e) => setNewHeaderValue(e.target.value)}
-                          placeholder="请求头值"
-                          className="flex-1"
-                        />
-                        <Button 
-                          onClick={() => {
-                            addHttpHeader()
-                            const newHeaders = { ...httpHeaders, [newHeaderKey]: newHeaderValue }
-                            setNewCase({
-                              ...newCase,
-                              parameters: JSON.stringify({
-                                url: httpUrl,
-                                method: httpMethod,
-                                headers: newHeaders,
-                                body: httpBody
-                              }, null, 2)
-                            })
-                          }} 
-                          disabled={!newHeaderKey || !newHeaderValue}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
+                    <div className="space-y-2">
+                      <Label htmlFor="http-headers">请求头配置 (JSON格式)</Label>
+                      <Textarea
+                        id="http-headers"
+                        value={httpHeaders}
+                        onChange={(e) => handleHttpHeadersChange(e.target.value)}
+                        placeholder='{"Content-Type": "application/json", "Authorization": "Bearer token"}'
+                        className="font-mono text-sm"
+                        rows={6}
+                      />
+                      {httpHeadersError && (
+                        <div className="text-xs text-red-600">
+                          {httpHeadersError}
+                        </div>
+                      )}
+                      <div className="text-xs text-muted-foreground">
+                        请输入有效的JSON格式，例如: {`{"Content-Type": "application/json", "User-Agent": "MyApp/1.0"}`}
                       </div>
                     </div>
 
@@ -1033,15 +974,20 @@ export function AttackCaseManagement() {
                           value={httpBody}
                           onChange={(e) => {
                             setHttpBody(e.target.value)
-                            setNewCase({
-                              ...newCase,
-                              parameters: JSON.stringify({
-                                url: httpUrl,
-                                method: httpMethod,
-                                headers: httpHeaders,
-                                body: e.target.value
-                              }, null, 2)
-                            })
+                            try {
+                              const headersObj = JSON.parse(httpHeaders)
+                              setNewCase({
+                                ...newCase,
+                                parameters: JSON.stringify({
+                                  url: httpUrl,
+                                  method: httpMethod,
+                                  headers: headersObj,
+                                  body: e.target.value
+                                }, null, 2)
+                              })
+                            } catch (error) {
+                              // JSON格式错误时不更新参数
+                            }
                           }}
                           placeholder='例如: {"username": "${username}", "password": "${password}"}'
                           className="font-mono text-sm"
