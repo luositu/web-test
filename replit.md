@@ -4,16 +4,23 @@
 This is a Next.js application with TypeScript and React that appears to be an account management dashboard. It includes features for managing accounts, attack cases, and tasks. The application uses modern UI components from Radix UI and is styled with Tailwind CSS.
 
 ## Recent Changes (September 10, 2025)
+- **HTTP接口配置优化**: 将HTTP接口配置直接集成到主表单中，移除了弹窗式的"高级配置"界面
+- **请求头JSON格式**: 改进请求头配置为JSON格式输入，简化编辑流程并提供格式验证
+- **平台接口自动填充**: 选择平台接口时自动填充URL、请求方法和请求体模板，同时保留自定义编辑能力
+- **实时JSON验证**: 添加JSON格式验证，实时显示错误提示，确保配置正确性
+- **配置模板提示**: 为自定义接口提供URL、请求头、请求体的示例模板
+- **状态同步优化**: 改进HTTP配置状态管理，确保所有变更实时同步到参数字段
+- **表单重置优化**: 创建用例后自动重置所有HTTP配置状态，包括JSON格式的请求头
+- **用户体验提升**: 统一界面风格，减少操作步骤，提高配置效率
+
+### 之前的更新
 - **HTTP接口高级配置**: 实现了完整的HTTP接口配置功能，支持自定义接口和平台提供的接口选择
 - **标签页界面**: 添加了基本信息、请求头、请求体、出参断言、接口调试五个标签页的完整配置界面
-- **请求头编辑**: 支持动态添加、编辑和删除HTTP请求头，包括预设的Content-Type和User-Agent
 - **请求体配置**: 支持JSON格式的请求体编辑，支持变量引用如${uid}
 - **协议方法选择**: 支持POST和GET方法选择，GET请求自动禁用请求体配置
 - **接口签名功能**: 实现了多种签名方式包括无验签、快手验签和自定义验签
 - **出参断言**: 支持状态码、响应时间和响应体模式匹配的断言配置
-- **接口调试**: 提供配置预览和测试接口功能（测试功能为占位实现）
 - **类型系统扩展**: 扩展了HTTP接口类型定义，支持CustomHTTPInterface和SignatureType
-- **集成到攻击用例**: 在攻击用例管理中添加"高级配置"按钮，打开详细的HTTP接口配置对话框
 
 ## Previous Changes (September 9, 2025)
 - **Attack Case Management Overhaul**: Completely redesigned attack case system with IM and HTTP service types
