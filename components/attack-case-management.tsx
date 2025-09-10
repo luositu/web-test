@@ -608,6 +608,95 @@ export function AttackCaseManagement() {
     }
   }
 
+  // 查找URL树节点
+  const findUrlNode = (nodes: URLTreeNode[], nodeId: string): URLTreeNode | null => {
+    for (const node of nodes) {
+      if (node.id === nodeId) {
+        return node
+      }
+      if (node.children) {
+        const found = findUrlNode(node.children, nodeId)
+        if (found) return found
+      }
+    }
+    return null
+  }
+
+  // 处理URL节点选择
+  const handleUrlNodeSelect = (nodeId: string) => {
+    setSelectedUrlNode(nodeId)
+    const node = findUrlNode(URL_TREE, nodeId)
+    
+    if (node && node.url) {
+      // 设置URL
+      setHttpUrl(node.url)
+      
+      // 设置请求方法
+      if (node.method) {
+        setHttpMethod(node.method)
+      }
+      
+      // 设置请求头
+      if (node.headers) {
+        const headersJson = JSON.stringify(node.headers, null, 2)
+        setHttpHeaders(headersJson)
+        setHttpHeadersError("")
+      }
+      
+      // 设置请求体
+      if (node.body && node.method === "POST") {
+        setHttpBody(node.body)
+      } else if (node.method === "GET") {
+        setHttpBody("")
+      }
+      
+      // 更新接口名称
+      setNewCase({
+        ...newCase,
+        apiInterface: node.name,
+        parameters: JSON.stringify({
+          url: node.url,
+          method: node.method || httpMethod,
+          headers: node.headers || {},
+          body: (node.method === "POST" && node.body) ? node.body : "",
+          signature: selectedSignature
+        }, null, 2)
+      })
+    }
+  }
+
+  // 渲染URL树状选项
+  const renderUrlTreeOptions = (nodes: URLTreeNode[], prefix = ""): JSX.Element[] => {
+    const options: JSX.Element[] = []
+    
+    nodes.forEach((node) => {
+      if (node.url) {
+        // 叶节点（有URL的节点）
+        options.push(
+          <SelectItem key={node.id} value={node.id}>
+            <div className="flex items-center space-x-2">
+              <span>{prefix}{node.name}</span>
+              <span className="text-xs text-muted-foreground">
+                ({node.method || "GET"})
+              </span>
+            </div>
+          </SelectItem>
+        )
+      } else if (node.children) {
+        // 分组节点
+        options.push(
+          <div key={node.id} className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
+            {prefix}{node.name}
+          </div>
+        )
+        // 递归渲染子节点
+        options.push(...renderUrlTreeOptions(node.children, "  "))
+      }
+    })
+    
+    return options
+  }
+
   // 删除用例
   const handleDeleteCase = (caseId: string) => {
     setCaseToDelete(caseId)
@@ -912,65 +1001,82 @@ export function AttackCaseManagement() {
                   </Select>
                 </div>
 
-                {/* API接口选择 */}
-                <div className="space-y-2">
-                  <Label>API接口</Label>
-                  <Select 
-                    value={showCustomInterfaceInput ? "自定义接口" : newCase.apiInterface} 
-                    onValueChange={(value) => {
-                      if (newCase.serviceType === "HTTP") {
-                        handlePlatformInterfaceSelect(value)
-                      } else {
-                        setNewCase({ ...newCase, apiInterface: value })
-                      }
-                    }}
-                    disabled={!newCase.serviceType}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={newCase.serviceType ? "选择API接口" : "请先选择服务类型"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getCurrentInterfaces().map((interface_) => (
-                        <SelectItem key={interface_.id} value={interface_.name}>
-                          <div className="flex items-center space-x-2">
-                            <span>{interface_.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              ({interface_.description})
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  {/* 自定义接口名称输入 */}
-                  {showCustomInterfaceInput && (
-                    <div className="space-y-2">
-                      <Label htmlFor="custom-interface-name">自定义接口名称</Label>
-                      <Input
-                        id="custom-interface-name"
-                        value={customInterfaceName}
-                        onChange={(e) => handleCustomInterfaceNameChange(e.target.value)}
-                        placeholder="请输入自定义接口名称"
-                        className="w-full"
-                      />
-                      <div className="text-xs text-muted-foreground">
-                        输入您要测试的自定义HTTP接口名称
-                      </div>
-                    </div>
-                  )}
-                  
-                  {!newCase.serviceType && (
-                    <div className="text-xs text-muted-foreground">
-                      请先选择服务类型以查看可用的API接口
-                    </div>
-                  )}
-                </div>
+                {/* IM服务的API接口选择 */}
+                {newCase.serviceType === "IM" && (
+                  <div className="space-y-2">
+                    <Label>API接口</Label>
+                    <Select 
+                      value={newCase.apiInterface} 
+                      onValueChange={(value) => setNewCase({ ...newCase, apiInterface: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="选择IM接口" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {IM_INTERFACES.map((interface_) => (
+                          <SelectItem key={interface_.id} value={interface_.name}>
+                            <div className="flex items-center space-x-2">
+                              <span>{interface_.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                ({interface_.description})
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 {/* HTTP服务配置 */}
                 {newCase.serviceType === "HTTP" && (
                   <div className="space-y-6 p-4 border rounded-lg bg-muted/30">
                     <h3 className="text-lg font-medium">HTTP接口配置</h3>
+                    
+                    {/* URL选择方式 */}
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-4">
+                        <Label>URL配置方式</Label>
+                        <div className="flex space-x-4">
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              checked={!showCustomUrl}
+                              onChange={() => setShowCustomUrl(false)}
+                              className="form-radio"
+                            />
+                            <span className="text-sm">从预设选择</span>
+                          </label>
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="radio"
+                              checked={showCustomUrl}
+                              onChange={() => setShowCustomUrl(true)}
+                              className="form-radio"
+                            />
+                            <span className="text-sm">自定义URL</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* 预设URL树状选择 */}
+                      {!showCustomUrl && (
+                        <div className="space-y-2">
+                          <Label>选择接口</Label>
+                          <Select
+                            value={selectedUrlNode}
+                            onValueChange={(value) => handleUrlNodeSelect(value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="选择预设接口" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {renderUrlTreeOptions(URL_TREE)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
                     
                     {/* URL和方法配置 */}
                     <div className="grid grid-cols-4 gap-4">
@@ -998,7 +1104,13 @@ export function AttackCaseManagement() {
                               // JSON格式错误时不更新参数
                             }
                           }}
+                          disabled={!showCustomUrl && !selectedUrlNode}
                         />
+                        {!showCustomUrl && !selectedUrlNode && (
+                          <div className="text-xs text-muted-foreground">
+                            请先从上方选择预设接口，或切换到自定义URL模式
+                          </div>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="http-method">请求方法</Label>
