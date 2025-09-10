@@ -23,6 +23,9 @@ This is a Next.js application with TypeScript and React that appears to be an ac
 - **Chain Configuration**: Implemented chain-level configuration with account groups, parameter files, and global variables
 - **Collapsible UI**: Added expandable/collapsible chain configuration section positioned above service type selection
 - **Enhanced Workflow**: Reorganized creation flow with chain configuration as primary configuration point
+- **Attack Case Grouped Execution Logs**: Reorganized execution logs by attack case titles with collapsible sections for improved navigation
+- **Enhanced Log Statistics**: Added comprehensive statistics for each attack case including execution counts, success rates, and average response times
+- **Smart Log Organization**: Implemented expandable/collapsible log groups with visual status indicators and filtering capabilities
 
 ## Previous Changes (September 8, 2025)
 - **Project Setup**: Configured the application to run in the Replit environment  
