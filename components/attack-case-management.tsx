@@ -683,6 +683,17 @@ export function AttackCaseManagement() {
     setExpandedNodes(newExpanded)
   }
 
+  // 获取树中所有节点（用于查找）
+  const findAllNodes = (node: URLTreeNode): URLTreeNode[] => {
+    const nodes = [node]
+    if (node.children) {
+      node.children.forEach(child => {
+        nodes.push(...findAllNodes(child))
+      })
+    }
+    return nodes
+  }
+
   // 渲染树状列表节点
   const renderTreeNode = (node: URLTreeNode, depth = 0): JSX.Element => {
     const isExpanded = expandedNodes.has(node.id)
