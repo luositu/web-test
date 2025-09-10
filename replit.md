@@ -3,7 +3,19 @@
 ## Overview
 This is a Next.js application with TypeScript and React that appears to be an account management dashboard. It includes features for managing accounts, attack cases, and tasks. The application uses modern UI components from Radix UI and is styled with Tailwind CSS.
 
-## Recent Changes (September 9, 2025)
+## Recent Changes (September 10, 2025)
+- **HTTP接口高级配置**: 实现了完整的HTTP接口配置功能，支持自定义接口和平台提供的接口选择
+- **标签页界面**: 添加了基本信息、请求头、请求体、出参断言、接口调试五个标签页的完整配置界面
+- **请求头编辑**: 支持动态添加、编辑和删除HTTP请求头，包括预设的Content-Type和User-Agent
+- **请求体配置**: 支持JSON格式的请求体编辑，支持变量引用如${uid}
+- **协议方法选择**: 支持POST和GET方法选择，GET请求自动禁用请求体配置
+- **接口签名功能**: 实现了多种签名方式包括无验签、快手验签和自定义验签
+- **出参断言**: 支持状态码、响应时间和响应体模式匹配的断言配置
+- **接口调试**: 提供配置预览和测试接口功能（测试功能为占位实现）
+- **类型系统扩展**: 扩展了HTTP接口类型定义，支持CustomHTTPInterface和SignatureType
+- **集成到攻击用例**: 在攻击用例管理中添加"高级配置"按钮，打开详细的HTTP接口配置对话框
+
+## Previous Changes (September 9, 2025)
 - **Attack Case Management Overhaul**: Completely redesigned attack case system with IM and HTTP service types
 - **Two-Level Interface Selection**: Implemented service type -> specific API interface selection workflow
 - **JSON Parameter Input**: Added JSON format parameter input for attack case configuration
@@ -46,6 +58,10 @@ This is a Next.js application with TypeScript and React that appears to be an ac
 ### Key Features
 - Account Management (`/accounts`)
 - Attack Case Management (`/attack-cases`) with tabbed interface for creating and managing attack cases
+  - Enhanced HTTP interface configuration with 5-tab detailed setup
+  - Support for custom and platform-provided HTTP interfaces
+  - Request headers, body, signature, and assertion configuration
+  - Advanced testing and debugging capabilities
 - Task Management (`/tasks`) with synchronized attack case data and detailed execution monitoring
 - Task Details Pages (`/tasks/[id]`) with real-time status monitoring, QPS monitoring charts, and task control
 - Unified data sharing between components via lib/data-store.ts
@@ -64,7 +80,8 @@ This is a Next.js application with TypeScript and React that appears to be an ac
 - `app/` - Next.js App Router pages and API routes
   - `tasks/[id]/page.tsx` - Dynamic task details page with real-time monitoring
 - `components/` - Reusable UI components including Radix UI primitives
-  - `attack-case-management.tsx` - Attack case creation and management with global data integration
+  - `attack-case-management.tsx` - Attack case creation and management with global data integration and HTTP interface configuration
+  - `http-interface-config.tsx` - Advanced HTTP interface configuration component with tabbed interface
   - `task-management.tsx` - Task creation and management with shared attack case data and navigation
 - `lib/` - Utility functions, type definitions, and global data storage
   - `data-store.ts` - Centralized data store for cross-component data sharing
