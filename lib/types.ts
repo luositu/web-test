@@ -318,6 +318,129 @@ export const HTTP_INTERFACES: HTTPServiceInterface[] = [
   }
 ]
 
+// URL树结构类型定义
+export interface URLTreeNode {
+  id: string
+  name: string
+  url?: string
+  method?: "GET" | "POST"
+  headers?: Record<string, string>
+  body?: string
+  children?: URLTreeNode[]
+}
+
+// 预定义的URL树结构
+export const URL_TREE: URLTreeNode[] = [
+  {
+    id: "api",
+    name: "API服务",
+    children: [
+      {
+        id: "user",
+        name: "用户管理",
+        children: [
+          {
+            id: "user_login",
+            name: "用户登录",
+            url: "https://api.example.com/auth/login",
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify({
+              username: "${username}",
+              password: "${password}"
+            }, null, 2)
+          },
+          {
+            id: "user_register",
+            name: "用户注册",
+            url: "https://api.example.com/auth/register",
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify({
+              username: "${username}",
+              password: "${password}",
+              email: "${email}"
+            }, null, 2)
+          },
+          {
+            id: "user_profile",
+            name: "获取用户信息",
+            url: "https://api.example.com/user/profile",
+            method: "GET",
+            headers: {
+              "Authorization": "Bearer ${token}",
+              "Accept": "application/json"
+            }
+          }
+        ]
+      },
+      {
+        id: "content",
+        name: "内容管理",
+        children: [
+          {
+            id: "upload_file",
+            name: "文件上传",
+            url: "https://api.example.com/upload",
+            method: "POST",
+            headers: {
+              "Authorization": "Bearer ${token}",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify({
+              file: "${file}",
+              path: "${uploadPath}"
+            }, null, 2)
+          },
+          {
+            id: "search_content",
+            name: "内容搜索",
+            url: "https://api.example.com/search",
+            method: "GET",
+            headers: {
+              "Authorization": "Bearer ${token}",
+              "Accept": "application/json"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "third_party",
+    name: "第三方服务",
+    children: [
+      {
+        id: "payment",
+        name: "支付服务",
+        children: [
+          {
+            id: "create_order",
+            name: "创建订单",
+            url: "https://pay.example.com/order/create",
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-API-Key": "${apiKey}"
+            },
+            body: JSON.stringify({
+              amount: "${amount}",
+              currency: "CNY",
+              description: "${description}"
+            }, null, 2)
+          }
+        ]
+      }
+    ]
+  }
+]
+
 // 签名类型配置
 export const SIGNATURE_TYPES: SignatureType[] = [
   {

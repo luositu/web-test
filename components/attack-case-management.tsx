@@ -13,7 +13,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { toast } from "@/hooks/use-toast"
 import { dataStore } from "@/lib/data-store"
 import type { AttackCase, IMServiceInterface, HTTPServiceInterface } from "@/lib/types"
-import { IM_INTERFACES, HTTP_INTERFACES } from "@/lib/types"
+import { IM_INTERFACES, HTTP_INTERFACES, SIGNATURE_TYPES, URL_TREE, URLTreeNode } from "@/lib/types"
 import {
   Plus,
   Target,
@@ -70,6 +70,8 @@ export function AttackCaseManagement() {
   const [selectedSignature, setSelectedSignature] = useState("none")
   const [customInterfaceName, setCustomInterfaceName] = useState("")
   const [showCustomInterfaceInput, setShowCustomInterfaceInput] = useState(false)
+  const [showCustomUrl, setShowCustomUrl] = useState(false)
+  const [selectedUrlNode, setSelectedUrlNode] = useState<string>("")
   
   // 新用例表单状态
   const [newCase, setNewCase] = useState({
