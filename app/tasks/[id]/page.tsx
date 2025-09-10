@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { 
   ArrowLeft, 
   Play, 
@@ -26,7 +27,9 @@ import {
   Server,
   Zap,
   BarChart3,
-  Settings
+  Settings,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import type { Task, TaskExecutionLog, RealTimeStats, QPSDataPoint, BackendLog } from "@/lib/types"
@@ -45,6 +48,7 @@ export default function TaskDetailsPage() {
   
   const [taskDetails, setTaskDetails] = useState<TaskDetails | null>(null)
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null)
+  const [expandedCases, setExpandedCases] = useState<Set<string>>(new Set())
 
   // 模拟任务详情数据
   useEffect(() => {
@@ -92,12 +96,65 @@ export default function TaskDetailsPage() {
         {
           id: "2", 
           taskId: taskId,
+          attackCaseId: "1",
           timestamp: "2024-01-14 16:30:15",
           level: "info",
           message: "载入攻击用例配置",
           details: "成功载入2个攻击用例：钓鱼邮件测试 - 财务部门, 恶意链接测试 - 内部系统",
           component: "system",
           executionTime: 45
+        },
+        {
+          id: "3",
+          taskId: taskId,
+          attackCaseId: "1",
+          timestamp: "2024-01-14 16:31:00",
+          level: "info",
+          message: "开始执行攻击用例：钓鱼邮件测试 - 财务部门",
+          details: "目标用户数量：25，预计QPS：5",
+          component: "api",
+          executionTime: 120,
+          responseCode: 200
+        },
+        {
+          id: "4",
+          taskId: taskId,
+          attackCaseId: "1",
+          timestamp: "2024-01-14 16:31:05",
+          level: "success",
+          message: "消息发送成功",
+          details: "向用户 user_001 发送钓鱼邮件成功",
+          component: "api",
+          executionTime: 850,
+          responseCode: 200,
+          targetUserId: "user_001",
+          requestData: '{"message": "财务系统升级通知", "targetUser": "user_001"}',
+          responseData: '{"status": "success", "messageId": "msg_123"}'
+        },
+        {
+          id: "5",
+          taskId: taskId,
+          attackCaseId: "2",
+          timestamp: "2024-01-14 16:32:00",
+          level: "info",
+          message: "开始执行攻击用例：恶意链接测试 - 内部系统",
+          details: "目标用户数量：20，预计QPS：3",
+          component: "api",
+          executionTime: 95,
+          responseCode: 200
+        },
+        {
+          id: "6",
+          taskId: taskId,
+          attackCaseId: "2",
+          timestamp: "2024-01-14 16:32:10",
+          level: "warning",
+          message: "部分用户响应异常",
+          details: "用户 user_015 未响应恶意链接点击",
+          component: "network",
+          executionTime: 1200,
+          responseCode: 408,
+          targetUserId: "user_015"
         }
       ],
       backendLogs: [
@@ -181,6 +238,55 @@ export default function TaskDetailsPage() {
       return () => clearInterval(interval)
     }
   }, [taskDetails?.status])
+
+  // 按攻击用例分组执行日志
+  const groupLogsByAttackCase = () => {
+    if (!taskDetails?.executionLogs) return {}
+    
+    const grouped: Record<string, TaskExecutionLog[]> = {}
+    
+    taskDetails.executionLogs.forEach(log => {
+      const caseId = log.attackCaseId || 'system'
+      if (!grouped[caseId]) {
+        grouped[caseId] = []
+      }
+      grouped[caseId].push(log)
+    })
+    
+    return grouped
+  }
+
+  // 获取攻击用例名称
+  const getAttackCaseName = (caseId: string) => {
+    if (caseId === 'system') return '系统日志'
+    const index = parseInt(caseId) - 1
+    return taskDetails?.attackCases[index] || `攻击用例 ${caseId}`
+  }
+
+  // 计算用例统计信息
+  const getCaseStats = (logs: TaskExecutionLog[]) => {
+    const total = logs.length
+    const errors = logs.filter(log => log.level === 'error').length
+    const warnings = logs.filter(log => log.level === 'warning').length
+    const successes = logs.filter(log => log.level === 'success').length
+    const avgExecutionTime = logs
+      .filter(log => log.executionTime)
+      .reduce((sum, log) => sum + (log.executionTime || 0), 0) / 
+      logs.filter(log => log.executionTime).length || 0
+
+    return { total, errors, warnings, successes, avgExecutionTime }
+  }
+
+  // 切换用例展开状态
+  const toggleCaseExpansion = (caseId: string) => {
+    const newExpanded = new Set(expandedCases)
+    if (newExpanded.has(caseId)) {
+      newExpanded.delete(caseId)
+    } else {
+      newExpanded.add(caseId)
+    }
+    setExpandedCases(newExpanded)
+  }
 
   const handleTaskControl = (action: "start" | "pause" | "stop") => {
     if (!taskDetails) return
@@ -524,7 +630,7 @@ export default function TaskDetailsPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center space-x-2">
                 <FileText className="h-5 w-5" />
-                <span>详细执行日志</span>
+                <span>按用例分组的执行日志</span>
               </CardTitle>
               <div className="flex space-x-2">
                 <Button variant="outline" size="sm">
@@ -562,67 +668,159 @@ export default function TaskDetailsPage() {
                       <option value="system">系统</option>
                     </select>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        const allCaseIds = Object.keys(groupLogsByAttackCase())
+                        if (expandedCases.size === allCaseIds.length) {
+                          setExpandedCases(new Set())
+                        } else {
+                          setExpandedCases(new Set(allCaseIds))
+                        }
+                      }}
+                    >
+                      {expandedCases.size === Object.keys(groupLogsByAttackCase()).length ? '全部收起' : '全部展开'}
+                    </Button>
+                  </div>
                 </div>
 
-                {/* 执行日志表格 */}
-                <div className="overflow-hidden rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[150px]">时间</TableHead>
-                        <TableHead className="w-[80px]">级别</TableHead>
-                        <TableHead className="w-[100px]">组件</TableHead>
-                        <TableHead>消息</TableHead>
-                        <TableHead className="w-[100px]">执行时间</TableHead>
-                        <TableHead className="w-[80px]">响应码</TableHead>
-                        <TableHead className="w-[80px]">操作</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {taskDetails.executionLogs?.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell className="font-mono text-xs">
-                            {log.timestamp}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={
-                              log.level === "error" ? "destructive" :
-                              log.level === "warning" ? "outline" :
-                              log.level === "success" ? "default" : "secondary"
-                            }>
-                              {log.level}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm">{log.component}</TableCell>
-                          <TableCell className="text-sm">
-                            <div>
-                              <div className="font-medium">{log.message}</div>
-                              {log.details && (
-                                <div className="text-muted-foreground text-xs mt-1">
-                                  {log.details}
+                {/* 按攻击用例分组的执行日志 */}
+                <div className="space-y-4">
+                  {Object.entries(groupLogsByAttackCase()).map(([caseId, logs]) => {
+                    const isExpanded = expandedCases.has(caseId)
+                    const stats = getCaseStats(logs)
+                    const caseName = getAttackCaseName(caseId)
+                    
+                    return (
+                      <div key={caseId} className="border rounded-lg">
+                        <Collapsible>
+                          <CollapsibleTrigger asChild>
+                            <div 
+                              className="w-full p-4 bg-muted/50 hover:bg-muted cursor-pointer flex items-center justify-between transition-colors"
+                              onClick={() => toggleCaseExpansion(caseId)}
+                            >
+                              <div className="flex items-center space-x-3">
+                                {isExpanded ? (
+                                  <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" />
+                                )}
+                                <div>
+                                  <h4 className="font-medium">{caseName}</h4>
+                                  <div className="flex items-center space-x-4 mt-1">
+                                    <div className="text-sm text-muted-foreground">
+                                      共 {stats.total} 条日志
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      {stats.successes > 0 && (
+                                        <Badge variant="default" className="text-xs">
+                                          {stats.successes} 成功
+                                        </Badge>
+                                      )}
+                                      {stats.warnings > 0 && (
+                                        <Badge variant="outline" className="text-xs">
+                                          {stats.warnings} 警告
+                                        </Badge>
+                                      )}
+                                      {stats.errors > 0 && (
+                                        <Badge variant="destructive" className="text-xs">
+                                          {stats.errors} 错误
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    {stats.avgExecutionTime > 0 && (
+                                      <div className="text-sm text-muted-foreground">
+                                        平均耗时: {stats.avgExecutionTime.toFixed(0)}ms
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                              )}
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Badge 
+                                  variant={stats.errors > 0 ? "destructive" : stats.warnings > 0 ? "outline" : "default"}
+                                  className="text-xs"
+                                >
+                                  {stats.errors > 0 ? "有错误" : stats.warnings > 0 ? "有警告" : "正常"}
+                                </Badge>
+                              </div>
                             </div>
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {log.executionTime ? `${log.executionTime}ms` : '-'}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {log.responseCode && (
-                              <Badge variant={log.responseCode < 400 ? "default" : "destructive"}>
-                                {log.responseCode}
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                          </CollapsibleTrigger>
+                          
+                          {isExpanded && (
+                            <CollapsibleContent>
+                              <div className="border-t">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="w-[150px]">时间</TableHead>
+                                      <TableHead className="w-[80px]">级别</TableHead>
+                                      <TableHead className="w-[100px]">组件</TableHead>
+                                      <TableHead>消息</TableHead>
+                                      <TableHead className="w-[100px]">执行时间</TableHead>
+                                      <TableHead className="w-[80px]">响应码</TableHead>
+                                      <TableHead className="w-[80px]">操作</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {logs.map((log) => (
+                                      <TableRow key={log.id}>
+                                        <TableCell className="font-mono text-xs">
+                                          {log.timestamp}
+                                        </TableCell>
+                                        <TableCell>
+                                          <Badge variant={
+                                            log.level === "error" ? "destructive" :
+                                            log.level === "warning" ? "outline" :
+                                            log.level === "success" ? "default" : "secondary"
+                                          }>
+                                            {log.level}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-sm">{log.component}</TableCell>
+                                        <TableCell className="text-sm">
+                                          <div>
+                                            <div className="font-medium">{log.message}</div>
+                                            {log.details && (
+                                              <div className="text-muted-foreground text-xs mt-1">
+                                                {log.details}
+                                              </div>
+                                            )}
+                                            {log.targetUserId && (
+                                              <div className="text-blue-600 text-xs mt-1">
+                                                目标用户: {log.targetUserId}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="text-sm">
+                                          {log.executionTime ? `${log.executionTime}ms` : '-'}
+                                        </TableCell>
+                                        <TableCell className="text-sm">
+                                          {log.responseCode && (
+                                            <Badge variant={log.responseCode < 400 ? "default" : "destructive"}>
+                                              {log.responseCode}
+                                            </Badge>
+                                          )}
+                                        </TableCell>
+                                        <TableCell>
+                                          <Button variant="ghost" size="sm">
+                                            <Eye className="h-4 w-4" />
+                                          </Button>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </CollapsibleContent>
+                          )}
+                        </Collapsible>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             </CardContent>
