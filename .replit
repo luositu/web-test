@@ -15,10 +15,10 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Next.js Development Server"
+args = "Next.js Dev Server"
 
 [[workflows.workflow]]
-name = "Next.js Development Server"
+name = "Next.js Dev Server"
 author = "agent"
 
 [[workflows.workflow.tasks]]
