@@ -1238,11 +1238,6 @@ export function AttackCaseManagement() {
                           }}
                           disabled={!showCustomUrl && !selectedUrlNode}
                         />
-                        {!showCustomUrl && !selectedUrlNode && (
-                          <div className="text-xs text-muted-foreground">
-                            请先从上方选择预设接口，或切换到自定义URL模式
-                          </div>
-                        )}
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="http-method">请求方法</Label>
@@ -1294,9 +1289,6 @@ export function AttackCaseManagement() {
                           {httpHeadersError}
                         </div>
                       )}
-                      <div className="text-xs text-muted-foreground">
-                        请输入有效的JSON格式，例如: {`{"Content-Type": "application/json", "User-Agent": "MyApp/1.0"}`}
-                      </div>
                     </div>
 
                     {/* 请求体配置 */}
@@ -1328,9 +1320,6 @@ export function AttackCaseManagement() {
                           className="font-mono text-sm"
                           rows={6}
                         />
-                        <div className="text-xs text-muted-foreground">
-                          支持JSON格式，可以使用变量引用如 ${"{uid}"}。选择平台接口时会自动填充模板。
-                        </div>
                       </div>
                     )}
 
@@ -1350,23 +1339,8 @@ export function AttackCaseManagement() {
                           <SelectItem value="custom">自定义验签</SelectItem>
                         </SelectContent>
                       </Select>
-                      <div className="text-xs text-muted-foreground">
-                        选择接口签名验证方式，用于安全认证
-                      </div>
                     </div>
 
-                    {/* 自定义接口模板提示 */}
-                    {!newCase.apiInterface && (
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-                        <div className="text-sm font-medium text-blue-800 mb-2">自定义接口模板参考</div>
-                        <div className="text-xs text-blue-600 space-y-1">
-                          <div><strong>URL示例:</strong> https://api.example.com/login</div>
-                          <div><strong>请求头示例:</strong> Content-Type: application/json, Authorization: Bearer token</div>
-                          <div><strong>请求体示例:</strong> {`{"username": "\${username}", "password": "\${password}"}`}</div>
-                          <div><strong>签名示例:</strong> 选择适合的签名类型进行接口验证</div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
 
