@@ -75,6 +75,14 @@ export interface Task {
   createdBy: string
   scheduledTime?: string
   autoStart: boolean
+  // 扩展的执行记录字段
+  totalTargets?: number
+  successfulAttacks?: number
+  failedAttacks?: number
+  executionLogs?: TaskExecutionLog[]
+  realTimeStats?: RealTimeStats
+  qpsHistory?: QPSDataPoint[]
+  backendLogs?: BackendLog[]
 }
 
 export interface LogEntry {
@@ -84,6 +92,60 @@ export interface LogEntry {
   level: "info" | "warning" | "error" | "success"
   message: string
   details?: string
+}
+
+// 任务执行详细日志
+export interface TaskExecutionLog {
+  id: string
+  taskId: string
+  attackCaseId?: string
+  timestamp: string
+  level: "info" | "warning" | "error" | "success" | "debug"
+  message: string
+  details: string
+  component: "qps" | "api" | "auth" | "network" | "system" | "user"
+  executionTime?: number // 执行时间（毫秒）
+  responseCode?: number
+  responseTime?: number
+  targetUserId?: string
+  requestData?: string
+  responseData?: string
+}
+
+// 实时统计数据
+export interface RealTimeStats {
+  currentQPS: number
+  averageResponseTime: number
+  successRate: number
+  activeConnections: number
+  totalRequests: number
+  successfulRequests: number
+  failedRequests: number
+  avgThroughput: number
+}
+
+// QPS数据点
+export interface QPSDataPoint {
+  time: string
+  qps: number
+  timestamp: number
+  responseTime?: number
+  errorRate?: number
+}
+
+// 后端日志
+export interface BackendLog {
+  id: string
+  taskId: string
+  timestamp: string
+  source: "api_server" | "auth_service" | "database" | "cache" | "queue" | "external_api"
+  level: "debug" | "info" | "warn" | "error" | "fatal"
+  message: string
+  context?: Record<string, any>
+  stackTrace?: string
+  requestId?: string
+  userId?: string
+  duration?: number
 }
 
 export interface MessageTemplate {
