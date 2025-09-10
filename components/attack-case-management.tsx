@@ -67,7 +67,7 @@ export function AttackCaseManagement() {
   const [httpBody, setHttpBody] = useState("")
   const [httpMethod, setHttpMethod] = useState<"GET" | "POST">("POST")
   const [httpUrl, setHttpUrl] = useState("")
-  const [selectedSignature, setSelectedSignature] = useState("")
+  const [selectedSignature, setSelectedSignature] = useState("none")
   
   // 新用例表单状态
   const [newCase, setNewCase] = useState({
@@ -372,7 +372,7 @@ export function AttackCaseManagement() {
       setHttpBody("")
       setHttpMethod("POST")
       setHttpUrl("")
-      setSelectedSignature("")
+      setSelectedSignature("none")
       
       toast({
         title: "创建成功",
@@ -1034,7 +1034,7 @@ export function AttackCaseManagement() {
                           <SelectValue placeholder="选择签名类型（可选）" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">无签名</SelectItem>
+                          <SelectItem value="none">无签名</SelectItem>
                           <SelectItem value="sig">sig</SelectItem>
                           <SelectItem value="sig3">sig3</SelectItem>
                           <SelectItem value="NStokensig">NStokensig</SelectItem>
