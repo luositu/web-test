@@ -481,7 +481,7 @@ export function TaskManagement() {
       if (caseSearchQuery) {
         const searchLower = caseSearchQuery.toLowerCase()
         if (!attackCase.name.toLowerCase().includes(searchLower) && 
-            !attackCase.type.toLowerCase().includes(searchLower)) {
+            !(attackCase.type || attackCase.serviceType).toLowerCase().includes(searchLower)) {
           return false
         }
       }
@@ -489,7 +489,7 @@ export function TaskManagement() {
       // 类别筛选
       if (selectedCategoryFilter !== "all") {
         const category = attackCategories.find(cat => cat.name === selectedCategoryFilter)
-        if (!category || !category.types.includes(attackCase.type)) {
+        if (!category || !category.types.includes(attackCase.type || attackCase.serviceType)) {
           return false
         }
       }
@@ -1117,7 +1117,7 @@ export function TaskManagement() {
                       {attackCase.status === 'paused' && <Badge className="bg-yellow-500 text-white text-xs">暂停</Badge>}
                       {attackCase.status === 'completed' && <Badge className="bg-blue-500 text-white text-xs">已完成</Badge>}
                       {attackCase.status === 'draft' && <Badge className="bg-gray-500 text-white text-xs">草稿</Badge>}
-                      {attackCase.status === '待执行' && <Badge className="bg-orange-500 text-white text-xs">待执行</Badge>}
+                      {attackCase.status === 'pending' && <Badge className="bg-orange-500 text-white text-xs">待执行</Badge>}
                     </div>
                   </div>
                 ))
