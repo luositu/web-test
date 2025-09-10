@@ -33,6 +33,9 @@ import {
   Play,
   FileText,
   List,
+  Folder,
+  FolderOpen,
+  Link,
 } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -72,6 +75,7 @@ export function AttackCaseManagement() {
   const [showCustomInterfaceInput, setShowCustomInterfaceInput] = useState(false)
   const [showCustomUrl, setShowCustomUrl] = useState(false)
   const [selectedUrlNode, setSelectedUrlNode] = useState<string>("")
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
   
   // 新用例表单状态
   const [newCase, setNewCase] = useState({
@@ -381,6 +385,7 @@ export function AttackCaseManagement() {
       setShowCustomInterfaceInput(false)
       setShowCustomUrl(false)
       setSelectedUrlNode("")
+      setExpandedNodes(new Set())
       
       toast({
         title: "创建成功",
@@ -667,36 +672,84 @@ export function AttackCaseManagement() {
     }
   }
 
-  // 渲染URL树状选项
-  const renderUrlTreeOptions = (nodes: URLTreeNode[], prefix = ""): JSX.Element[] => {
-    const options: JSX.Element[] = []
-    
-    nodes.forEach((node) => {
-      if (node.url) {
-        // 叶节点（有URL的节点）
-        options.push(
-          <SelectItem key={node.id} value={node.id}>
-            <div className="flex items-center space-x-2">
-              <span>{prefix}{node.name}</span>
-              <span className="text-xs text-muted-foreground">
-                ({node.method || "GET"})
-              </span>
+  // 切换节点展开状态
+  const toggleNodeExpanded = (nodeId: string) => {
+    const newExpanded = new Set(expandedNodes)
+    if (newExpanded.has(nodeId)) {
+      newExpanded.delete(nodeId)
+    } else {
+      newExpanded.add(nodeId)
+    }
+    setExpandedNodes(newExpanded)
+  }
+
+  // 渲染树状列表节点
+  const renderTreeNode = (node: URLTreeNode, depth = 0): JSX.Element => {
+    const isExpanded = expandedNodes.has(node.id)
+    const hasChildren = node.children && node.children.length > 0
+    const isLeaf = !!node.url
+    const isSelected = selectedUrlNode === node.id
+
+    return (
+      <div key={node.id} className="w-full">
+        <div
+          className={`flex items-center py-2 px-2 hover:bg-muted/50 cursor-pointer rounded-md transition-colors ${
+            isSelected ? 'bg-primary/10 border border-primary/20' : ''
+          }`}
+          style={{ paddingLeft: `${depth * 20 + 8}px` }}
+          onClick={() => {
+            if (isLeaf) {
+              handleUrlNodeSelect(node.id)
+            } else if (hasChildren) {
+              toggleNodeExpanded(node.id)
+            }
+          }}
+        >
+          {/* 展开/收起图标 */}
+          {hasChildren && (
+            <div className="mr-2 flex-shrink-0">
+              {isExpanded ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
             </div>
-          </SelectItem>
-        )
-      } else if (node.children) {
-        // 分组节点
-        options.push(
-          <div key={node.id} className="px-2 py-1 text-xs font-medium text-muted-foreground bg-muted/50">
-            {prefix}{node.name}
+          )}
+          
+          {/* 文件夹/接口图标 */}
+          <div className="mr-2 flex-shrink-0">
+            {isLeaf ? (
+              <Link className="h-4 w-4 text-blue-500" />
+            ) : hasChildren ? (
+              isExpanded ? (
+                <FolderOpen className="h-4 w-4 text-yellow-500" />
+              ) : (
+                <Folder className="h-4 w-4 text-yellow-500" />
+              )
+            ) : null}
           </div>
-        )
-        // 递归渲染子节点
-        options.push(...renderUrlTreeOptions(node.children, "  "))
-      }
-    })
-    
-    return options
+          
+          {/* 节点名称 */}
+          <span className={`flex-1 text-sm ${isLeaf ? 'text-foreground' : 'text-muted-foreground font-medium'}`}>
+            {node.name}
+          </span>
+          
+          {/* 请求方法标识 */}
+          {isLeaf && node.method && (
+            <Badge variant="outline" className="ml-2 text-xs">
+              {node.method}
+            </Badge>
+          )}
+        </div>
+        
+        {/* 子节点 */}
+        {hasChildren && isExpanded && (
+          <div className="ml-0">
+            {node.children!.map(child => renderTreeNode(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    )
   }
 
   // 删除用例
@@ -1065,17 +1118,35 @@ export function AttackCaseManagement() {
                       {!showCustomUrl && (
                         <div className="space-y-2">
                           <Label>选择接口</Label>
-                          <Select
-                            value={selectedUrlNode}
-                            onValueChange={(value) => handleUrlNodeSelect(value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="选择预设接口" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {renderUrlTreeOptions(URL_TREE)}
-                            </SelectContent>
-                          </Select>
+                          <div className="border rounded-md p-2 bg-background max-h-64 overflow-y-auto">
+                            {selectedUrlNode ? (
+                              <div className="mb-2 p-2 bg-primary/10 border border-primary/20 rounded-md">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium">
+                                    已选择: {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.name}
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedUrlNode("")
+                                      setHttpUrl("")
+                                      setNewCase({ ...newCase, apiInterface: "" })
+                                    }}
+                                  >
+                                    清除选择
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="mb-2 text-sm text-muted-foreground">
+                                点击下方展开文件夹并选择接口
+                              </div>
+                            )}
+                            <div className="space-y-1">
+                              {URL_TREE.map(node => renderTreeNode(node))}
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
