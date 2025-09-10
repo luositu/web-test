@@ -379,6 +379,8 @@ export function AttackCaseManagement() {
       setSelectedSignature("none")
       setCustomInterfaceName("")
       setShowCustomInterfaceInput(false)
+      setShowCustomUrl(false)
+      setSelectedUrlNode("")
       
       toast({
         title: "创建成功",
