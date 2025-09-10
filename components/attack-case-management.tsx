@@ -486,15 +486,18 @@ export function AttackCaseManagement() {
     const selectedInterface = HTTP_INTERFACES.find(i => i.name === interfaceName)
     if (selectedInterface) {
       // 自动填充请求方法
-      setHttpMethod(selectedInterface.method === "PUT" || selectedInterface.method === "DELETE" ? "POST" : selectedInterface.method as "GET" | "POST")
+      const method = selectedInterface.method === "PUT" || selectedInterface.method === "DELETE" ? "POST" : selectedInterface.method as "GET" | "POST"
+      setHttpMethod(method)
       
+      let bodyContent = ""
       // 自动填充请求体模板（仅对POST请求）
       if (selectedInterface.method === "POST") {
         const bodyTemplate: Record<string, string> = {}
         selectedInterface.requiredParams.forEach(param => {
           bodyTemplate[param] = `\${${param}}`
         })
-        setHttpBody(JSON.stringify(bodyTemplate, null, 2))
+        bodyContent = JSON.stringify(bodyTemplate, null, 2)
+        setHttpBody(bodyContent)
       } else {
         setHttpBody("")
       }
@@ -505,9 +508,9 @@ export function AttackCaseManagement() {
         apiInterface: interfaceName,
         parameters: JSON.stringify({
           url: httpUrl,
-          method: selectedInterface.method === "PUT" || selectedInterface.method === "DELETE" ? "POST" : selectedInterface.method,
+          method: method,
           headers: httpHeaders,
-          body: selectedInterface.method === "POST" ? JSON.stringify(bodyTemplate, null, 2) : "",
+          body: bodyContent,
           requiredParams: selectedInterface.requiredParams
         }, null, 2)
       })
