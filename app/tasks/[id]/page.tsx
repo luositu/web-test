@@ -21,49 +21,21 @@ import {
   CheckCircle,
   TrendingUp,
   Eye,
-  Download
+  Download,
+  FileText,
+  Server,
+  Zap,
+  BarChart3,
+  Settings
 } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import type { Task, TaskExecutionLog, RealTimeStats, QPSDataPoint, BackendLog } from "@/lib/types"
 
-interface TaskDetails {
-  id: string
-  name: string
-  description: string
-  status: "pending" | "running" | "paused" | "completed" | "failed"
-  priority: "low" | "medium" | "high"
-  attackCases: string[]
-  startTime: string
-  endTime?: string
-  progress: number
-  createdAt: string
-  createdBy: string
+// 使用扩展的Task类型
+type TaskDetails = Task & {
   totalTargets: number
   successfulAttacks: number
   failedAttacks: number
-  executionLogs: LogEntry[]
-  realTimeStats: RealTimeStats
-}
-
-interface LogEntry {
-  id: string
-  timestamp: string
-  level: "info" | "warning" | "error" | "success"
-  message: string
-  details: string
-  attackCase?: string
-}
-
-interface RealTimeStats {
-  currentQPS: number
-  averageResponseTime: number
-  successRate: number
-  activeConnections: number
-}
-
-interface QPSDataPoint {
-  time: string
-  qps: number
-  timestamp: number
 }
 
 export default function TaskDetailsPage() {
@@ -73,7 +45,6 @@ export default function TaskDetailsPage() {
   
   const [taskDetails, setTaskDetails] = useState<TaskDetails | null>(null)
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null)
-  const [qpsHistory, setQpsHistory] = useState<QPSDataPoint[]>([])
 
   // 模拟任务详情数据
   useEffect(() => {
@@ -88,6 +59,7 @@ export default function TaskDetailsPage() {
       progress: 0,
       createdAt: "2024-01-14",
       createdBy: "管理员",
+      autoStart: false,
       totalTargets: 45,
       successfulAttacks: 0,
       failedAttacks: 0,
@@ -95,15 +67,59 @@ export default function TaskDetailsPage() {
         currentQPS: 0,
         averageResponseTime: 0,
         successRate: 0,
-        activeConnections: 0
+        activeConnections: 0,
+        totalRequests: 0,
+        successfulRequests: 0,
+        failedRequests: 0,
+        avgThroughput: 0
       },
+      qpsHistory: [
+        { time: "16:30", qps: 0, timestamp: Date.now() - 300000, responseTime: 0, errorRate: 0 },
+        { time: "16:31", qps: 0, timestamp: Date.now() - 240000, responseTime: 0, errorRate: 0 },
+      ],
       executionLogs: [
         {
           id: "1",
+          taskId: taskId,
           timestamp: "2024-01-14 16:30:00",
           level: "info",
           message: "任务创建完成",
           details: "攻击任务已创建，等待手动启动",
+          component: "system",
+          executionTime: 125,
+          responseCode: 200
+        },
+        {
+          id: "2", 
+          taskId: taskId,
+          timestamp: "2024-01-14 16:30:15",
+          level: "info",
+          message: "载入攻击用例配置",
+          details: "成功载入2个攻击用例：钓鱼邮件测试 - 财务部门, 恶意链接测试 - 内部系统",
+          component: "system",
+          executionTime: 45
+        }
+      ],
+      backendLogs: [
+        {
+          id: "bl1",
+          taskId: taskId,
+          timestamp: "2024-01-14 16:30:00",
+          source: "api_server",
+          level: "info",
+          message: "Task created successfully",
+          context: { taskId: taskId, attackCases: 2 },
+          requestId: "req-123-456"
+        },
+        {
+          id: "bl2",
+          taskId: taskId, 
+          timestamp: "2024-01-14 16:30:15",
+          source: "auth_service",
+          level: "info",
+          message: "Account verification completed",
+          context: { verifiedAccounts: 45 },
+          duration: 1200
         }
       ]
     }
@@ -127,37 +143,42 @@ export default function TaskDetailsPage() {
           const newSuccessful = prev.successfulAttacks + (Math.random() > 0.7 ? 1 : 0)
           const newFailed = prev.failedAttacks + (Math.random() > 0.9 ? 1 : 0)
           const newQPS = 2 + Math.random() * 2
+          const totalRequests = (prev.realTimeStats?.totalRequests || 0) + Math.floor(Math.random() * 5)
+          const successfulRequests = (prev.realTimeStats?.successfulRequests || 0) + Math.floor(Math.random() * 4)
+          
+          const newRealTimeStats = {
+            currentQPS: newQPS,
+            averageResponseTime: 700 + Math.random() * 300,
+            successRate: totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 0,
+            activeConnections: 5 + Math.floor(Math.random() * 10),
+            totalRequests: totalRequests,
+            successfulRequests: successfulRequests,
+            failedRequests: totalRequests - successfulRequests,
+            avgThroughput: newQPS * 60
+          }
+
+          // 更新QPS历史数据
+          const newQpsPoint = {
+            time: timeStr.slice(0, 5), // HH:MM格式
+            qps: newQPS,
+            timestamp: timestamp,
+            responseTime: newRealTimeStats.averageResponseTime,
+            errorRate: 100 - newRealTimeStats.successRate
+          }
           
           return {
             ...prev,
             progress: newProgress,
             successfulAttacks: newSuccessful,
             failedAttacks: newFailed,
-            realTimeStats: {
-              ...prev.realTimeStats,
-              currentQPS: newQPS,
-              averageResponseTime: 700 + Math.random() * 300,
-              successRate: newSuccessful / (newSuccessful + newFailed + (prev.totalTargets - newSuccessful - newFailed)) * 100,
-              activeConnections: 5 + Math.floor(Math.random() * 10)
-            }
+            realTimeStats: newRealTimeStats,
+            qpsHistory: [...(prev.qpsHistory || []), newQpsPoint].slice(-50)
           }
-        })
-
-        // 更新QPS历史数据
-        setQpsHistory(prev => {
-          const newData = [...prev, { time: timeStr, qps: 2 + Math.random() * 2, timestamp }]
-          // 只保留最近50个数据点
-          return newData.slice(-50)
         })
       }, 2000)
       
       setRefreshInterval(interval)
       return () => clearInterval(interval)
-    } else {
-      // 任务不运行时清空QPS历史数据
-      if (taskDetails?.status === "pending") {
-        setQpsHistory([])
-      }
     }
   }, [taskDetails?.status])
 
@@ -407,9 +428,11 @@ export default function TaskDetailsPage() {
 
       {/* 详细信息标签页 */}
       <Tabs defaultValue="realtime" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 h-12 bg-muted p-1 rounded-lg">
+        <TabsList className="grid w-full grid-cols-5 h-12 bg-muted p-1 rounded-lg">
           <TabsTrigger value="realtime" className="text-sm">实时监控</TabsTrigger>
-          <TabsTrigger value="logs" className="text-sm">执行日志</TabsTrigger>
+          <TabsTrigger value="execution-logs" className="text-sm">执行日志</TabsTrigger>
+          <TabsTrigger value="qps-stats" className="text-sm">QPS统计</TabsTrigger>
+          <TabsTrigger value="backend-logs" className="text-sm">后端日志</TabsTrigger>
           <TabsTrigger value="settings" className="text-sm">任务设置</TabsTrigger>
         </TabsList>
 
@@ -425,9 +448,9 @@ export default function TaskDetailsPage() {
               </CardHeader>
               <CardContent>
                 <div className="h-64 w-full">
-                  {qpsHistory.length > 0 ? (
+                  {taskDetails.qpsHistory && taskDetails.qpsHistory.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={qpsHistory} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                      <LineChart data={taskDetails.qpsHistory} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                         <XAxis 
                           dataKey="time" 
@@ -494,6 +517,340 @@ export default function TaskDetailsPage() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="execution-logs">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center space-x-2">
+                <FileText className="h-5 w-5" />
+                <span>详细执行日志</span>
+              </CardTitle>
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  导出日志
+                </Button>
+                <Button variant="outline" size="sm">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  刷新
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* 日志过滤器 */}
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium">级别:</label>
+                    <select className="px-3 py-1 text-sm border rounded">
+                      <option value="all">全部</option>
+                      <option value="info">信息</option>
+                      <option value="warning">警告</option>
+                      <option value="error">错误</option>
+                      <option value="success">成功</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium">组件:</label>
+                    <select className="px-3 py-1 text-sm border rounded">
+                      <option value="all">全部</option>
+                      <option value="qps">QPS</option>
+                      <option value="api">API</option>
+                      <option value="auth">认证</option>
+                      <option value="network">网络</option>
+                      <option value="system">系统</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* 执行日志表格 */}
+                <div className="overflow-hidden rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[150px]">时间</TableHead>
+                        <TableHead className="w-[80px]">级别</TableHead>
+                        <TableHead className="w-[100px]">组件</TableHead>
+                        <TableHead>消息</TableHead>
+                        <TableHead className="w-[100px]">执行时间</TableHead>
+                        <TableHead className="w-[80px]">响应码</TableHead>
+                        <TableHead className="w-[80px]">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {taskDetails.executionLogs?.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell className="font-mono text-xs">
+                            {log.timestamp}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              log.level === "error" ? "destructive" :
+                              log.level === "warning" ? "outline" :
+                              log.level === "success" ? "default" : "secondary"
+                            }>
+                              {log.level}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">{log.component}</TableCell>
+                          <TableCell className="text-sm">
+                            <div>
+                              <div className="font-medium">{log.message}</div>
+                              {log.details && (
+                                <div className="text-muted-foreground text-xs mt-1">
+                                  {log.details}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {log.executionTime ? `${log.executionTime}ms` : '-'}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {log.responseCode && (
+                              <Badge variant={log.responseCode < 400 ? "default" : "destructive"}>
+                                {log.responseCode}
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="qps-stats">
+          <div className="space-y-6">
+            {/* QPS统计卡片 */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="flex items-center p-4">
+                  <Zap className="h-8 w-8 text-blue-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-muted-foreground">当前QPS</p>
+                    <p className="text-xl font-bold">{taskDetails.realTimeStats?.currentQPS.toFixed(1)}</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex items-center p-4">
+                  <Clock className="h-8 w-8 text-green-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-muted-foreground">平均响应时间</p>
+                    <p className="text-xl font-bold">{taskDetails.realTimeStats?.averageResponseTime.toFixed(0)}ms</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex items-center p-4">
+                  <CheckCircle className="h-8 w-8 text-emerald-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-muted-foreground">成功率</p>
+                    <p className="text-xl font-bold">{taskDetails.realTimeStats?.successRate.toFixed(1)}%</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="flex items-center p-4">
+                  <BarChart3 className="h-8 w-8 text-purple-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-muted-foreground">总请求数</p>
+                    <p className="text-xl font-bold">{taskDetails.realTimeStats?.totalRequests}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* QPS历史图表 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <TrendingUp className="h-5 w-5" />
+                  <span>QPS历史趋势</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80 w-full">
+                  {taskDetails.qpsHistory && taskDetails.qpsHistory.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={taskDetails.qpsHistory} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                        <XAxis 
+                          dataKey="time" 
+                          tick={{ fontSize: 12 }}
+                          interval="preserveStartEnd"
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 12 }}
+                          domain={['dataMin - 0.5', 'dataMax + 0.5']}
+                        />
+                        <Tooltip 
+                          labelStyle={{ color: '#000' }}
+                          contentStyle={{ 
+                            backgroundColor: '#fff',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px'
+                          }}
+                          formatter={(value: number, name: string) => [
+                            name === 'qps' ? value.toFixed(2) : 
+                            name === 'responseTime' ? `${value.toFixed(0)}ms` :
+                            name === 'errorRate' ? `${value.toFixed(1)}%` : value,
+                            name === 'qps' ? 'QPS' :
+                            name === 'responseTime' ? '响应时间' :
+                            name === 'errorRate' ? '错误率' : name
+                          ]}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="qps" 
+                          stroke="#2563eb" 
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 4 }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="responseTime" 
+                          stroke="#16a34a" 
+                          strokeWidth={2}
+                          dot={false}
+                          yAxisId="right"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-muted-foreground">
+                      <div className="text-center">
+                        <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg font-medium">暂无QPS数据</p>
+                        <p className="text-sm">启动任务后将记录QPS统计信息</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="backend-logs">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center space-x-2">
+                <Server className="h-5 w-5" />
+                <span>后端服务日志</span>
+              </CardTitle>
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  导出日志
+                </Button>
+                <Button variant="outline" size="sm">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  刷新
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* 日志过滤器 */}
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium">服务:</label>
+                    <select className="px-3 py-1 text-sm border rounded">
+                      <option value="all">全部</option>
+                      <option value="api_server">API服务器</option>
+                      <option value="auth_service">认证服务</option>
+                      <option value="database">数据库</option>
+                      <option value="cache">缓存</option>
+                      <option value="queue">队列</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium">级别:</label>
+                    <select className="px-3 py-1 text-sm border rounded">
+                      <option value="all">全部</option>
+                      <option value="debug">调试</option>
+                      <option value="info">信息</option>
+                      <option value="warn">警告</option>
+                      <option value="error">错误</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* 后端日志表格 */}
+                <div className="overflow-hidden rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[150px]">时间</TableHead>
+                        <TableHead className="w-[100px]">服务</TableHead>
+                        <TableHead className="w-[80px]">级别</TableHead>
+                        <TableHead>消息</TableHead>
+                        <TableHead className="w-[100px]">请求ID</TableHead>
+                        <TableHead className="w-[80px]">耗时</TableHead>
+                        <TableHead className="w-[80px]">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {taskDetails.backendLogs?.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell className="font-mono text-xs">
+                            {log.timestamp}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {log.source}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              log.level === "error" || log.level === "fatal" ? "destructive" :
+                              log.level === "warn" ? "outline" :
+                              log.level === "info" ? "default" : "secondary"
+                            }>
+                              {log.level}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            <div>
+                              <div className="font-medium">{log.message}</div>
+                              {log.context && (
+                                <div className="text-muted-foreground text-xs mt-1 font-mono">
+                                  {JSON.stringify(log.context, null, 2)}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-xs font-mono">
+                            {log.requestId}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {log.duration ? `${log.duration}ms` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="sm">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="logs">
