@@ -68,7 +68,7 @@ export function AttackCaseManagement() {
   }, null, 2))
   const [httpHeadersError, setHttpHeadersError] = useState("")
   const [httpBody, setHttpBody] = useState("")
-  const [httpMethod, setHttpMethod] = useState<"GET" | "POST">("POST")
+  const [httpMethod, setHttpMethod] = useState<"GET" | "POST" | "PUT" | "DELETE">("POST")
   const [httpUrl, setHttpUrl] = useState("")
   const [selectedSignature, setSelectedSignature] = useState("none")
   const [customInterfaceName, setCustomInterfaceName] = useState("")
@@ -699,11 +699,12 @@ export function AttackCaseManagement() {
     return nodes
   }
 
-  // 渲染树状列表节点
+  // 渲染树状列表节点 - 针对URL路径优化
   const renderTreeNode = (node: URLTreeNode, depth = 0): JSX.Element => {
     const isExpanded = expandedNodes.has(node.id)
     const hasChildren = node.children && node.children.length > 0
-    const isLeaf = !!node.url
+    const isEndpoint = !!node.url  // 真实的API端点
+    const isPathSegment = hasChildren && !node.url  // URL路径段
     const isSelected = selectedUrlNode === node.id
 
     return (
@@ -711,50 +712,71 @@ export function AttackCaseManagement() {
         <div
           className={`flex items-center py-2 px-2 hover:bg-muted/50 cursor-pointer rounded-md transition-colors ${
             isSelected ? 'bg-primary/10 border border-primary/20' : ''
-          }`}
-          style={{ paddingLeft: `${depth * 20 + 8}px` }}
+          } ${isEndpoint ? 'hover:bg-green-50 dark:hover:bg-green-950/20' : ''}`}
+          style={{ paddingLeft: `${depth * 16 + 8}px` }}
           onClick={() => {
-            if (isLeaf) {
+            if (isEndpoint) {
               handleUrlNodeSelect(node.id)
             } else if (hasChildren) {
               toggleNodeExpanded(node.id)
             }
           }}
         >
-          {/* 展开/收起图标 */}
+          {/* URL路径图标 */}
+          <div className="mr-2 flex-shrink-0">
+            {isPathSegment ? (
+              isExpanded ? (
+                <FolderOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              ) : (
+                <Folder className="h-4 w-4 text-blue-500 dark:text-blue-500" />
+              )
+            ) : isEndpoint ? (
+              <Link className="h-4 w-4 text-green-600 dark:text-green-400" />
+            ) : null}
+          </div>
+          
+          {/* URL路径和方法显示 */}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {isPathSegment ? (
+              // 路径段显示
+              <span className="text-sm font-mono text-blue-700 dark:text-blue-300 truncate">
+                {node.name}
+              </span>
+            ) : isEndpoint ? (
+              // API端点显示
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs px-2 py-0.5 h-5 font-mono font-medium flex-shrink-0 ${
+                    node.method === 'GET' ? 'border-green-500 text-green-700 dark:text-green-400' :
+                    node.method === 'POST' ? 'border-blue-500 text-blue-700 dark:text-blue-400' :
+                    node.method === 'PUT' ? 'border-orange-500 text-orange-700 dark:text-orange-400' :
+                    node.method === 'DELETE' ? 'border-red-500 text-red-700 dark:text-red-400' :
+                    'border-gray-500 text-gray-700 dark:text-gray-400'
+                  }`}
+                >
+                  {node.method}
+                </Badge>
+                <span className="text-sm font-mono text-foreground truncate">
+                  {node.name.replace(/^(GET|POST|PUT|DELETE)\s+/, '')}
+                </span>
+              </div>
+            ) : (
+              <span className="text-sm text-muted-foreground truncate">
+                {node.name}
+              </span>
+            )}
+          </div>
+          
+          {/* 展开/收起指示器 */}
           {hasChildren && (
-            <div className="mr-2 flex-shrink-0">
+            <div className="ml-auto flex-shrink-0">
               {isExpanded ? (
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               ) : (
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               )}
             </div>
-          )}
-          
-          {/* 文件夹/接口图标 */}
-          <div className="mr-2 flex-shrink-0">
-            {isLeaf ? (
-              <Link className="h-4 w-4 text-blue-500" />
-            ) : hasChildren ? (
-              isExpanded ? (
-                <FolderOpen className="h-4 w-4 text-yellow-500" />
-              ) : (
-                <Folder className="h-4 w-4 text-yellow-500" />
-              )
-            ) : null}
-          </div>
-          
-          {/* 节点名称 */}
-          <span className={`flex-1 text-sm ${isLeaf ? 'text-foreground' : 'text-muted-foreground font-medium'}`}>
-            {node.name}
-          </span>
-          
-          {/* 请求方法标识 */}
-          {isLeaf && node.method && (
-            <Badge variant="outline" className="ml-2 text-xs">
-              {node.method}
-            </Badge>
           )}
         </div>
         
