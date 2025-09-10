@@ -323,7 +323,7 @@ export interface URLTreeNode {
   id: string
   name: string
   url?: string
-  method?: "GET" | "POST"
+  method?: "GET" | "POST" | "PUT" | "DELETE"
   headers?: Record<string, string>
   body?: string
   children?: URLTreeNode[]
@@ -332,17 +332,17 @@ export interface URLTreeNode {
 // 预定义的URL树结构
 export const URL_TREE: URLTreeNode[] = [
   {
-    id: "api",
-    name: "API服务",
+    id: "api_root",
+    name: "/api",
     children: [
       {
-        id: "user",
-        name: "用户管理",
+        id: "auth_path",
+        name: "/auth",
         children: [
           {
-            id: "user_login",
-            name: "用户登录",
-            url: "https://api.example.com/auth/login",
+            id: "auth_login",
+            name: "POST /api/auth/login",
+            url: "https://api.example.com/api/auth/login",
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -354,9 +354,9 @@ export const URL_TREE: URLTreeNode[] = [
             }, null, 2)
           },
           {
-            id: "user_register",
-            name: "用户注册",
-            url: "https://api.example.com/auth/register",
+            id: "auth_register",
+            name: "POST /api/auth/register",
+            url: "https://api.example.com/api/auth/register",
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -369,10 +369,10 @@ export const URL_TREE: URLTreeNode[] = [
             }, null, 2)
           },
           {
-            id: "user_profile",
-            name: "获取用户信息",
-            url: "https://api.example.com/user/profile",
-            method: "GET",
+            id: "auth_logout",
+            name: "POST /api/auth/logout",
+            url: "https://api.example.com/api/auth/logout",
+            method: "POST",
             headers: {
               "Authorization": "Bearer ${token}",
               "Accept": "application/json"
@@ -381,58 +381,243 @@ export const URL_TREE: URLTreeNode[] = [
         ]
       },
       {
-        id: "content",
-        name: "内容管理",
+        id: "v1_path",
+        name: "/v1",
         children: [
           {
-            id: "upload_file",
-            name: "文件上传",
-            url: "https://api.example.com/upload",
-            method: "POST",
-            headers: {
-              "Authorization": "Bearer ${token}",
-              "Accept": "application/json"
-            },
-            body: JSON.stringify({
-              file: "${file}",
-              path: "${uploadPath}"
-            }, null, 2)
+            id: "users_path",
+            name: "/users",
+            children: [
+              {
+                id: "users_list",
+                name: "GET /api/v1/users",
+                url: "https://api.example.com/api/v1/users",
+                method: "GET",
+                headers: {
+                  "Authorization": "Bearer ${token}",
+                  "Accept": "application/json"
+                }
+              },
+              {
+                id: "users_create",
+                name: "POST /api/v1/users",
+                url: "https://api.example.com/api/v1/users",
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer ${token}",
+                  "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                  name: "${name}",
+                  email: "${email}",
+                  role: "${role}"
+                }, null, 2)
+              },
+              {
+                id: "users_profile",
+                name: "GET /api/v1/users/profile",
+                url: "https://api.example.com/api/v1/users/profile",
+                method: "GET",
+                headers: {
+                  "Authorization": "Bearer ${token}",
+                  "Accept": "application/json"
+                }
+              },
+              {
+                id: "users_update",
+                name: "PUT /api/v1/users/profile",
+                url: "https://api.example.com/api/v1/users/profile",
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer ${token}",
+                  "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                  nickname: "${nickname}",
+                  email: "${email}",
+                  avatar: "${avatar}"
+                }, null, 2)
+              }
+            ]
           },
           {
-            id: "search_content",
-            name: "内容搜索",
-            url: "https://api.example.com/search",
-            method: "GET",
-            headers: {
-              "Authorization": "Bearer ${token}",
-              "Accept": "application/json"
-            }
+            id: "messages_path",
+            name: "/messages",
+            children: [
+              {
+                id: "messages_list",
+                name: "GET /api/v1/messages",
+                url: "https://api.example.com/api/v1/messages",
+                method: "GET",
+                headers: {
+                  "Authorization": "Bearer ${token}",
+                  "Accept": "application/json"
+                }
+              },
+              {
+                id: "messages_send",
+                name: "POST /api/v1/messages",
+                url: "https://api.example.com/api/v1/messages",
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer ${token}",
+                  "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                  recipient_id: "${recipient_id}",
+                  content: "${content}",
+                  type: "text"
+                }, null, 2)
+              },
+              {
+                id: "messages_delete",
+                name: "DELETE /api/v1/messages/{id}",
+                url: "https://api.example.com/api/v1/messages/${message_id}",
+                method: "DELETE",
+                headers: {
+                  "Authorization": "Bearer ${token}",
+                  "Accept": "application/json"
+                }
+              }
+            ]
+          },
+          {
+            id: "orders_path",
+            name: "/orders",
+            children: [
+              {
+                id: "orders_list",
+                name: "GET /api/v1/orders",
+                url: "https://api.example.com/api/v1/orders",
+                method: "GET",
+                headers: {
+                  "Authorization": "Bearer ${token}",
+                  "Accept": "application/json"
+                }
+              },
+              {
+                id: "orders_create",
+                name: "POST /api/v1/orders",
+                url: "https://api.example.com/api/v1/orders",
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer ${token}",
+                  "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                  product_id: "${product_id}",
+                  quantity: "${quantity}",
+                  amount: "${amount}"
+                }, null, 2)
+              }
+            ]
+          }
+        ]
+      },
+      {
+        id: "v2_path",
+        name: "/v2",
+        children: [
+          {
+            id: "payments_path",
+            name: "/payments",
+            children: [
+              {
+                id: "payments_create",
+                name: "POST /api/v2/payments",
+                url: "https://api.example.com/api/v2/payments",
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer ${token}",
+                  "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                  order_id: "${order_id}",
+                  amount: "${amount}",
+                  currency: "CNY",
+                  payment_method: "${payment_method}"
+                }, null, 2)
+              },
+              {
+                id: "payments_status",
+                name: "GET /api/v2/payments/{id}/status",
+                url: "https://api.example.com/api/v2/payments/${payment_id}/status",
+                method: "GET",
+                headers: {
+                  "Authorization": "Bearer ${token}",
+                  "Accept": "application/json"
+                }
+              }
+            ]
           }
         ]
       }
     ]
   },
   {
-    id: "third_party",
-    name: "第三方服务",
+    id: "external_root",
+    name: "/external",
     children: [
       {
-        id: "payment",
-        name: "支付服务",
+        id: "sms_path",
+        name: "/sms",
         children: [
           {
-            id: "create_order",
-            name: "创建订单",
-            url: "https://pay.example.com/order/create",
+            id: "sms_send",
+            name: "POST /external/sms/send",
+            url: "https://sms.example.com/external/sms/send",
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "X-API-Key": "${apiKey}"
+              "Authorization": "Bearer ${sms_token}",
+              "Accept": "application/json"
             },
             body: JSON.stringify({
-              amount: "${amount}",
-              currency: "CNY",
-              description: "${description}"
+              phone: "${phone}",
+              message: "${message}",
+              template_id: "${template_id}"
+            }, null, 2)
+          },
+          {
+            id: "sms_verify",
+            name: "POST /external/sms/verify",
+            url: "https://sms.example.com/external/sms/verify",
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer ${sms_token}",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify({
+              phone: "${phone}",
+              code: "${verification_code}"
+            }, null, 2)
+          }
+        ]
+      },
+      {
+        id: "webhook_path",
+        name: "/webhook",
+        children: [
+          {
+            id: "webhook_notify",
+            name: "POST /external/webhook/notify",
+            url: "https://webhook.example.com/external/webhook/notify",
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Webhook-Secret": "${webhook_secret}",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify({
+              event: "${event_type}",
+              data: "${event_data}",
+              timestamp: "${timestamp}"
             }, null, 2)
           }
         ]
