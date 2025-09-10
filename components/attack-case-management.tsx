@@ -387,6 +387,7 @@ export function AttackCaseManagement() {
       setShowCustomUrl(false)
       setSelectedUrlNode("")
       setExpandedNodes(new Set())
+      setIsUrlDialogOpen(false)
       
       toast({
         title: "创建成功",
@@ -1129,39 +1130,45 @@ export function AttackCaseManagement() {
                         </div>
                       </div>
 
-                      {/* 预设URL树状选择 */}
+                      {/* 预设URL选择 */}
                       {!showCustomUrl && (
                         <div className="space-y-2">
                           <Label>选择接口</Label>
-                          <div className="border rounded-md p-2 bg-background max-h-64 overflow-y-auto">
-                            {selectedUrlNode ? (
-                              <div className="mb-2 p-2 bg-primary/10 border border-primary/20 rounded-md">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium">
-                                    已选择: {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.name}
-                                  </span>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedUrlNode("")
-                                      setHttpUrl("")
-                                      setNewCase({ ...newCase, apiInterface: "" })
-                                    }}
-                                  >
-                                    清除选择
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="mb-2 text-sm text-muted-foreground">
-                                点击下方展开文件夹并选择接口
-                              </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsUrlDialogOpen(true)}
+                              className="flex-1"
+                            >
+                              <Settings className="h-4 w-4 mr-2" />
+                              {selectedUrlNode ? "更改接口选择" : "选择预设接口"}
+                            </Button>
+                            {selectedUrlNode && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedUrlNode("")
+                                  setHttpUrl("")
+                                  setNewCase({ ...newCase, apiInterface: "" })
+                                }}
+                              >
+                                清除
+                              </Button>
                             )}
-                            <div className="space-y-1">
-                              {URL_TREE.map(node => renderTreeNode(node))}
-                            </div>
                           </div>
+                          {selectedUrlNode && (
+                            <div className="p-2 bg-primary/10 border border-primary/20 rounded-md">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium">
+                                  已选择: {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.name}
+                                </span>
+                                <Badge variant="outline" className="text-xs">
+                                  {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.method || "GET"}
+                                </Badge>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1746,6 +1753,47 @@ export function AttackCaseManagement() {
             <Button variant="destructive" onClick={confirmDelete}>
               删除
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* URL接口选择弹窗 */}
+      <Dialog open={isUrlDialogOpen} onOpenChange={setIsUrlDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>选择HTTP接口</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              点击文件夹展开分类，点击接口名称选择
+            </div>
+            {selectedUrlNode && (
+              <div className="p-3 bg-primary/10 border border-primary/20 rounded-md">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">
+                    当前选择: {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.name}
+                  </span>
+                  <Badge variant="outline" className="text-xs">
+                    {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.method || "GET"}
+                  </Badge>
+                </div>
+              </div>
+            )}
+            <div className="border rounded-md p-3 bg-background max-h-96 overflow-y-auto">
+              <div className="space-y-1">
+                {URL_TREE.map(node => renderTreeNode(node))}
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsUrlDialogOpen(false)}>
+                取消
+              </Button>
+              {selectedUrlNode && (
+                <Button onClick={() => setIsUrlDialogOpen(false)}>
+                  确认选择
+                </Button>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
