@@ -76,6 +76,7 @@ export function AttackCaseManagement() {
   const [showCustomUrl, setShowCustomUrl] = useState(false)
   const [selectedUrlNode, setSelectedUrlNode] = useState<string>("")
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
+  const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false)
   
   // 新用例表单状态
   const [newCase, setNewCase] = useState({
@@ -669,6 +670,9 @@ export function AttackCaseManagement() {
           signature: selectedSignature
         }, null, 2)
       })
+      
+      // 关闭弹窗
+      setIsUrlDialogOpen(false)
     }
   }
 
