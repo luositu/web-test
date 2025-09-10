@@ -67,6 +67,7 @@ export function AttackCaseManagement() {
   const [httpBody, setHttpBody] = useState("")
   const [httpMethod, setHttpMethod] = useState<"GET" | "POST">("POST")
   const [httpUrl, setHttpUrl] = useState("")
+  const [selectedSignature, setSelectedSignature] = useState("")
   
   // 新用例表单状态
   const [newCase, setNewCase] = useState({
@@ -371,6 +372,7 @@ export function AttackCaseManagement() {
       setHttpBody("")
       setHttpMethod("POST")
       setHttpUrl("")
+      setSelectedSignature("")
       
       toast({
         title: "创建成功",
@@ -485,11 +487,32 @@ export function AttackCaseManagement() {
           url: httpUrl,
           method: httpMethod,
           headers: headersObj,
-          body: httpBody
+          body: httpBody,
+          signature: selectedSignature
         }, null, 2)
       })
     } catch (error) {
       // JSON无效时不更新参数
+    }
+  }
+
+  // 处理签名选择变化
+  const handleSignatureChange = (signature: string) => {
+    setSelectedSignature(signature)
+    try {
+      const headersObj = JSON.parse(httpHeaders)
+      setNewCase({
+        ...newCase,
+        parameters: JSON.stringify({
+          url: httpUrl,
+          method: httpMethod,
+          headers: headersObj,
+          body: httpBody,
+          signature: signature
+        }, null, 2)
+      })
+    } catch (error) {
+      // JSON格式错误时不更新参数
     }
   }
 
@@ -531,6 +554,7 @@ export function AttackCaseManagement() {
           method: method,
           headers: headersObj,
           body: bodyContent,
+          signature: selectedSignature,
           requiredParams: selectedInterface.requiredParams
         }, null, 2)
       })
@@ -902,7 +926,8 @@ export function AttackCaseManagement() {
                                   url: e.target.value,
                                   method: httpMethod,
                                   headers: headersObj,
-                                  body: httpBody
+                                  body: httpBody,
+                                  signature: selectedSignature
                                 }, null, 2)
                               })
                             } catch (error) {
@@ -926,7 +951,8 @@ export function AttackCaseManagement() {
                                 url: httpUrl,
                                 method: value,
                                 headers: headersObj,
-                                body: value === "GET" ? "" : httpBody
+                                body: value === "GET" ? "" : httpBody,
+                                signature: selectedSignature
                               }, null, 2)
                             })
                           } catch (error) {
@@ -982,7 +1008,8 @@ export function AttackCaseManagement() {
                                   url: httpUrl,
                                   method: httpMethod,
                                   headers: headersObj,
-                                  body: e.target.value
+                                  body: e.target.value,
+                                  signature: selectedSignature
                                 }, null, 2)
                               })
                             } catch (error) {
@@ -999,6 +1026,27 @@ export function AttackCaseManagement() {
                       </div>
                     )}
 
+                    {/* 签名选项配置 */}
+                    <div className="space-y-2">
+                      <Label htmlFor="signature-select">签名选项</Label>
+                      <Select value={selectedSignature} onValueChange={handleSignatureChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="选择签名类型（可选）" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">无签名</SelectItem>
+                          <SelectItem value="sig">sig</SelectItem>
+                          <SelectItem value="sig3">sig3</SelectItem>
+                          <SelectItem value="NStokensig">NStokensig</SelectItem>
+                          <SelectItem value="kuaishou">快手验签</SelectItem>
+                          <SelectItem value="custom">自定义验签</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="text-xs text-muted-foreground">
+                        选择接口签名验证方式，用于安全认证
+                      </div>
+                    </div>
+
                     {/* 自定义接口模板提示 */}
                     {!newCase.apiInterface && (
                       <div className="p-3 bg-blue-50 border border-blue-200 rounded">
@@ -1007,6 +1055,7 @@ export function AttackCaseManagement() {
                           <div><strong>URL示例:</strong> https://api.example.com/login</div>
                           <div><strong>请求头示例:</strong> Content-Type: application/json, Authorization: Bearer token</div>
                           <div><strong>请求体示例:</strong> {`{"username": "\${username}", "password": "\${password}"}`}</div>
+                          <div><strong>签名示例:</strong> 选择适合的签名类型进行接口验证</div>
                         </div>
                       </div>
                     )}
