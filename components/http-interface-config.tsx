@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Trash2, Plus, Play, FileText, Settings, Globe, Code } from "lucide-react"
-import type { CustomHTTPInterface } from "@/lib/types"
-import { SIGNATURE_TYPES, HTTP_INTERFACES } from "@/lib/types"
+import type { CustomHTTPInterface, URLTreeNode } from "@/lib/types"
+import { SIGNATURE_TYPES, HTTP_INTERFACES, URL_TREE } from "@/lib/types"
+import { TreeSelector } from "@/components/ui/tree-selector"
 
 interface HTTPInterfaceConfigProps {
   onSave: (config: CustomHTTPInterface) => void
@@ -22,6 +23,7 @@ interface HTTPInterfaceConfigProps {
 export function HTTPInterfaceConfig({ onSave, initialConfig }: HTTPInterfaceConfigProps) {
   const [interfaceType, setInterfaceType] = useState<"platform" | "custom">("custom")
   const [selectedPlatformInterface, setSelectedPlatformInterface] = useState("")
+  const [selectedTreeNode, setSelectedTreeNode] = useState<URLTreeNode | null>(null)
   
   const [config, setConfig] = useState<CustomHTTPInterface>({
     id: initialConfig?.id || "",
@@ -157,21 +159,40 @@ export function HTTPInterfaceConfig({ onSave, initialConfig }: HTTPInterfaceConf
               {interfaceType === "platform" && (
                 <div className="space-y-2">
                   <Label>选择平台接口</Label>
-                  <Select value={selectedPlatformInterface} onValueChange={setSelectedPlatformInterface}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="选择一个平台接口" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {HTTP_INTERFACES.map((interface_) => (
-                        <SelectItem key={interface_.id} value={interface_.id}>
-                          <div className="flex items-center justify-between w-full">
-                            <span>{interface_.name}</span>
-                            <Badge variant="outline" className="ml-2">{interface_.method}</Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <TreeSelector
+                    nodes={URL_TREE}
+                    value={selectedTreeNode?.id}
+                    onSelect={(node) => {
+                      setSelectedTreeNode(node)
+                      setSelectedPlatformInterface(node.id)
+                      // 自动填充URL和其他配置
+                      if (node.url) {
+                        setConfig({
+                          ...config,
+                          url: node.url,
+                          method: (node.method as "GET" | "POST") || "POST",
+                          headers: { ...config.headers, ...node.headers },
+                          body: node.body || config.body
+                        })
+                      }
+                    }}
+                    placeholder="选择一个API接口"
+                  />
+                  
+                  {/* 显示选中接口的详细信息 */}
+                  {selectedTreeNode && selectedTreeNode.url && (
+                    <div className="mt-3 p-3 bg-muted/30 rounded-md">
+                      <h4 className="text-sm font-medium mb-2">接口预览</h4>
+                      <div className="space-y-1 text-xs">
+                        <div><strong>接口名称:</strong> {selectedTreeNode.name}</div>
+                        <div><strong>请求方法:</strong> {selectedTreeNode.method}</div>
+                        <div><strong>接口地址:</strong> {selectedTreeNode.url}</div>
+                        {selectedTreeNode.headers && (
+                          <div><strong>默认请求头:</strong> {Object.keys(selectedTreeNode.headers).join(", ")}</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
