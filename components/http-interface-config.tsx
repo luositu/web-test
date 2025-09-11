@@ -89,24 +89,22 @@ export function HTTPInterfaceConfig({ onSave, initialConfig }: HTTPInterfaceConf
 
   // 保存配置
   const handleSave = () => {
-    if (interfaceType === "platform" && selectedPlatformInterface) {
-      const platformInterface = HTTP_INTERFACES.find(i => i.id === selectedPlatformInterface)
-      if (platformInterface) {
-        const platformConfig: CustomHTTPInterface = {
-          id: platformInterface.id,
-          name: platformInterface.name,
-          serviceUnderTest: config.serviceUnderTest,
-          url: config.url,
-          method: platformInterface.method === "PUT" || platformInterface.method === "DELETE" ? "POST" : platformInterface.method as "GET" | "POST",
-          headers: config.headers,
-          body: config.body,
-          signature: config.signature,
-          assertions: config.assertions,
-          businessCode: config.businessCode
-        }
-        onSave(platformConfig)
-        return
+    if (interfaceType === "platform" && selectedTreeNode) {
+      // 使用选中的树节点创建平台配置
+      const platformConfig: CustomHTTPInterface = {
+        id: selectedTreeNode.id,
+        name: selectedTreeNode.name,
+        serviceUnderTest: config.serviceUnderTest,
+        url: selectedTreeNode.url || config.url,
+        method: (selectedTreeNode.method as "GET" | "POST" | "PUT" | "DELETE") || "POST",
+        headers: { ...config.headers, ...selectedTreeNode.headers },
+        body: selectedTreeNode.body || config.body,
+        signature: config.signature,
+        assertions: config.assertions,
+        businessCode: config.businessCode
       }
+      onSave(platformConfig)
+      return
     }
     
     onSave(config)
@@ -169,8 +167,9 @@ export function HTTPInterfaceConfig({ onSave, initialConfig }: HTTPInterfaceConf
                       if (node.url) {
                         setConfig({
                           ...config,
+                          name: node.name,
                           url: node.url,
-                          method: (node.method as "GET" | "POST") || "POST",
+                          method: (node.method as "GET" | "POST" | "PUT" | "DELETE") || "POST",
                           headers: { ...config.headers, ...node.headers },
                           body: node.body || config.body
                         })
@@ -242,13 +241,15 @@ export function HTTPInterfaceConfig({ onSave, initialConfig }: HTTPInterfaceConf
                       <Label htmlFor="protocol-method">
                         协议方法 <span className="text-red-500">*</span>
                       </Label>
-                      <Select value={config.method} onValueChange={(value) => setConfig({ ...config, method: value as "GET" | "POST" })}>
+                      <Select value={config.method} onValueChange={(value) => setConfig({ ...config, method: value as "GET" | "POST" | "PUT" | "DELETE" })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="POST">POST</SelectItem>
                           <SelectItem value="GET">GET</SelectItem>
+                          <SelectItem value="PUT">PUT</SelectItem>
+                          <SelectItem value="DELETE">DELETE</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
