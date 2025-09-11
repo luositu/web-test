@@ -712,6 +712,7 @@ export function AttackCaseManagement() {
     const isEndpoint = !!node.url  // 真实的API端点
     const isPathSegment = hasChildren && !node.url  // URL路径段
     const isSelected = selectedUrlNode === node.id
+    
 
     return (
       <div key={node.id} className="w-full">
@@ -721,7 +722,7 @@ export function AttackCaseManagement() {
           } ${isEndpoint ? 'hover:bg-green-50 dark:hover:bg-green-950/20' : ''}`}
           style={{ paddingLeft: `${depth * 16 + 8}px` }}
           onClick={(e) => {
-            e.stopPropagation()
+            e.preventDefault()
             if (isEndpoint) {
               handleUrlNodeSelect(node.id)
             } else if (hasChildren) {
@@ -778,7 +779,7 @@ export function AttackCaseManagement() {
           {/* 展开/收起指示器 */}
           {hasChildren && (
             <div 
-              className="ml-auto flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+              className="ml-auto flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded cursor-pointer"
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
@@ -1176,7 +1177,7 @@ export function AttackCaseManagement() {
                                 <ChevronDown className="h-4 w-4" />
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-96 p-0" align="end">
+                            <PopoverContent className="w-96 p-0" align="end" onOpenAutoFocus={(e) => e.preventDefault()}>
                               <div className="p-3 border-b">
                                 <h4 className="font-medium">选择预设接口</h4>
                                 {selectedUrlNode && (
