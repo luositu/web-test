@@ -714,11 +714,12 @@ export function AttackCaseManagement() {
     return (
       <div key={node.id} className="w-full">
         <div
-          className={`flex items-center py-2 px-2 hover:bg-muted/50 cursor-pointer rounded-md transition-colors ${
+          className={`flex items-center py-2 px-2 hover:bg-muted/50 cursor-pointer rounded-md transition-colors select-none ${
             isSelected ? 'bg-primary/10 border border-primary/20' : ''
           } ${isEndpoint ? 'hover:bg-green-50 dark:hover:bg-green-950/20' : ''}`}
           style={{ paddingLeft: `${depth * 16 + 8}px` }}
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation()
             if (isEndpoint) {
               handleUrlNodeSelect(node.id)
             } else if (hasChildren) {
@@ -1199,7 +1200,7 @@ export function AttackCaseManagement() {
                               </div>
                               <div className="max-h-80 overflow-y-auto p-3">
                                 <div className="space-y-1">
-                                  {URL_TREE.map(node => renderTreeNode(node))}
+                                  {URL_TREE.map(node => renderTreeNode(node, 0))}
                                 </div>
                               </div>
                               {selectedUrlNode && (
