@@ -3,7 +3,18 @@
 ## Overview
 This is a Next.js application with TypeScript and React that appears to be an account management dashboard. It includes features for managing accounts, attack cases, and tasks. The application uses modern UI components from Radix UI and is styled with Tailwind CSS.
 
-## Recent Changes (September 10, 2025)
+## Recent Changes (September 11, 2025)
+- **树形URL下拉选择器重构**: 创建了新的TreeSelector组件，完全重新设计了HTTP接口配置中的平台接口选择
+- **层级树状导航**: 实现了可展开/折叠的树状结构，支持文件夹式的URL路径浏览和API端点选择
+- **智能图标和状态**: 添加了文件夹、展开文件夹和API端点的专用图标，提供清晰的视觉层次结构
+- **弹窗式树选择器**: 使用Popover组件实现下拉树选择界面，提供400px宽的选择空间和300px高的滚动区域
+- **自动配置填充**: 选择API端点时自动填充接口名称、URL、HTTP方法、请求头和请求体模板
+- **HTTP方法支持扩展**: 扩展CustomHTTPInterface支持GET、POST、PUT、DELETE四种HTTP方法
+- **平台接口保存优化**: 修复了平台接口保存逻辑，直接使用选中的树节点数据而不依赖HTTP_INTERFACES映射
+- **接口预览功能**: 在选择平台接口后显示接口详细信息预览，包括名称、方法、地址和默认请求头
+- **类型安全改进**: 统一了所有HTTP方法类型定义，确保树选择和表单配置的类型一致性
+
+## Previous Changes (September 10, 2025)
 - **HTTP接口配置优化**: 将HTTP接口配置直接集成到主表单中，移除了弹窗式的"高级配置"界面
 - **请求头JSON格式**: 改进请求头配置为JSON格式输入，简化编辑流程并提供格式验证
 - **树状URL选择器**: 移除HTTP服务的API接口选择器，改为树状URL选择功能，支持预设接口和自定义URL两种模式
@@ -97,8 +108,9 @@ This is a Next.js application with TypeScript and React that appears to be an ac
   - `tasks/[id]/page.tsx` - Dynamic task details page with real-time monitoring
 - `components/` - Reusable UI components including Radix UI primitives
   - `attack-case-management.tsx` - Attack case creation and management with global data integration and HTTP interface configuration
-  - `http-interface-config.tsx` - Advanced HTTP interface configuration component with tabbed interface
+  - `http-interface-config.tsx` - Advanced HTTP interface configuration component with tabbed interface and tree selector
   - `task-management.tsx` - Task creation and management with shared attack case data and navigation
+  - `ui/tree-selector.tsx` - Tree-based URL selector component with hierarchical navigation and auto-fill capabilities
 - `lib/` - Utility functions, type definitions, and global data storage
   - `data-store.ts` - Centralized data store for cross-component data sharing
   - `types.ts` - Unified type definitions for attack cases and other data structures
