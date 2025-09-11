@@ -683,13 +683,15 @@ export function AttackCaseManagement() {
 
   // 切换节点展开状态
   const toggleNodeExpanded = (nodeId: string) => {
-    const newExpanded = new Set(expandedNodes)
-    if (newExpanded.has(nodeId)) {
-      newExpanded.delete(nodeId)
-    } else {
-      newExpanded.add(nodeId)
-    }
-    setExpandedNodes(newExpanded)
+    setExpandedNodes(prevExpanded => {
+      const newExpanded = new Set(prevExpanded)
+      if (newExpanded.has(nodeId)) {
+        newExpanded.delete(nodeId)
+      } else {
+        newExpanded.add(nodeId)
+      }
+      return newExpanded
+    })
   }
 
   // 获取树中所有节点（用于查找）
@@ -775,11 +777,18 @@ export function AttackCaseManagement() {
           
           {/* 展开/收起指示器 */}
           {hasChildren && (
-            <div className="ml-auto flex-shrink-0">
+            <div 
+              className="ml-auto flex-shrink-0 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                toggleNodeExpanded(node.id)
+              }}
+            >
               {isExpanded ? (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground cursor-pointer" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground cursor-pointer" />
               )}
             </div>
           )}
