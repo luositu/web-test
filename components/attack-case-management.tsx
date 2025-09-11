@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { toast } from "@/hooks/use-toast"
 import { dataStore } from "@/lib/data-store"
@@ -73,10 +74,8 @@ export function AttackCaseManagement() {
   const [selectedSignature, setSelectedSignature] = useState("none")
   const [customInterfaceName, setCustomInterfaceName] = useState("")
   const [showCustomInterfaceInput, setShowCustomInterfaceInput] = useState(false)
-  const [showCustomUrl, setShowCustomUrl] = useState(false)
   const [selectedUrlNode, setSelectedUrlNode] = useState<string>("")
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
-  const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false)
   
   // 新用例表单状态
   const [newCase, setNewCase] = useState({
@@ -328,6 +327,16 @@ export function AttackCaseManagement() {
       return false
     }
 
+    // 对于HTTP服务，验证URL是否为空
+    if (newCase.serviceType === "HTTP" && !httpUrl.trim()) {
+      toast({
+        title: "创建失败",
+        description: "HTTP服务必须输入接口URL",
+        variant: "destructive",
+      })
+      return false
+    }
+
     return true
   }
 
@@ -384,10 +393,8 @@ export function AttackCaseManagement() {
       setSelectedSignature("none")
       setCustomInterfaceName("")
       setShowCustomInterfaceInput(false)
-      setShowCustomUrl(false)
       setSelectedUrlNode("")
       setExpandedNodes(new Set())
-      setIsUrlDialogOpen(false)
       
       toast({
         title: "创建成功",
@@ -671,9 +678,6 @@ export function AttackCaseManagement() {
           signature: selectedSignature
         }, null, 2)
       })
-      
-      // 关闭弹窗
-      setIsUrlDialogOpen(false)
     }
   }
 
@@ -1126,118 +1130,96 @@ export function AttackCaseManagement() {
                   <div className="space-y-6 p-4 border rounded-lg bg-muted/30">
                     <h3 className="text-lg font-medium">HTTP接口配置</h3>
                     
-                    {/* URL选择方式 */}
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-4">
-                        <Label>URL配置方式</Label>
-                        <div className="flex space-x-4">
-                          <label className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              checked={!showCustomUrl}
-                              onChange={() => setShowCustomUrl(false)}
-                              className="form-radio"
-                            />
-                            <span className="text-sm">从预设选择</span>
-                          </label>
-                          <label className="flex items-center space-x-2">
-                            <input
-                              type="radio"
-                              checked={showCustomUrl}
-                              onChange={() => setShowCustomUrl(true)}
-                              className="form-radio"
-                            />
-                            <span className="text-sm">自定义URL</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      {/* 预设URL选择 */}
-                      {!showCustomUrl && (
-                        <div className="space-y-2">
-                          <Label>选择接口</Label>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              onClick={() => setIsUrlDialogOpen(true)}
-                              className="flex-1"
-                            >
-                              <Settings className="h-4 w-4 mr-2" />
-                              {selectedUrlNode ? "更改接口选择" : "选择预设接口"}
-                            </Button>
-                            {selectedUrlNode && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedUrlNode("")
-                                  setHttpUrl("")
-                                  setNewCase({ ...newCase, apiInterface: "" })
-                                }}
-                              >
-                                清除
-                              </Button>
-                            )}
-                          </div>
-                          {selectedUrlNode && (
-                            <div className="p-2 bg-primary/10 border border-primary/20 rounded-md">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 min-w-0 flex-1">
-                                  <span className="text-sm font-medium">已选择:</span>
-                                  <span className="text-sm font-mono text-foreground truncate">
-                                    {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.name}
-                                  </span>
-                                </div>
-                                <Badge 
-                                  variant="outline" 
-                                  className={`text-xs px-2 py-0.5 h-5 font-mono font-medium flex-shrink-0 ${
-                                    (() => {
-                                      const method = URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.method;
-                                      return method === 'GET' ? 'border-green-500 text-green-700 dark:text-green-400' :
-                                             method === 'POST' ? 'border-blue-500 text-blue-700 dark:text-blue-400' :
-                                             method === 'PUT' ? 'border-orange-500 text-orange-700 dark:text-orange-400' :
-                                             method === 'DELETE' ? 'border-red-500 text-red-700 dark:text-red-400' :
-                                             'border-gray-500 text-gray-700 dark:text-gray-400';
-                                    })()
-                                  }`}
-                                >
-                                  {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.method || "GET"}
-                                </Badge>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
                     
                     {/* URL和方法配置 */}
                     <div className="grid grid-cols-4 gap-4">
                       <div className="col-span-3 space-y-2">
                         <Label htmlFor="http-url">接口URL</Label>
-                        <Input
-                          id="http-url"
-                          placeholder="https://api.example.com/endpoint"
-                          value={httpUrl}
-                          onChange={(e) => {
-                            setHttpUrl(e.target.value)
-                            try {
-                              const headersObj = JSON.parse(httpHeaders)
-                              setNewCase({
-                                ...newCase,
-                                parameters: JSON.stringify({
-                                  url: e.target.value,
-                                  method: httpMethod,
-                                  headers: headersObj,
-                                  body: httpBody,
-                                  signature: selectedSignature
-                                }, null, 2)
-                              })
-                            } catch (error) {
-                              // JSON格式错误时不更新参数
-                            }
-                          }}
-                          disabled={!showCustomUrl && !selectedUrlNode}
-                        />
+                        <div className="flex">
+                          <Input
+                            id="http-url"
+                            placeholder="https://api.example.com/endpoint"
+                            value={httpUrl}
+                            onChange={(e) => {
+                              setHttpUrl(e.target.value)
+                              try {
+                                const headersObj = JSON.parse(httpHeaders)
+                                setNewCase({
+                                  ...newCase,
+                                  parameters: JSON.stringify({
+                                    url: e.target.value,
+                                    method: httpMethod,
+                                    headers: headersObj,
+                                    body: httpBody,
+                                    signature: selectedSignature
+                                  }, null, 2)
+                                })
+                              } catch (error) {
+                                // JSON格式错误时不更新参数
+                              }
+                            }}
+                            className="rounded-r-none"
+                          />
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className="rounded-l-none border-l-0 px-3">
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-96 p-0" align="end">
+                              <div className="p-3 border-b">
+                                <h4 className="font-medium">选择预设接口</h4>
+                                {selectedUrlNode && (
+                                  <div className="mt-2 p-2 bg-primary/10 border border-primary/20 rounded-md">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                                        <span className="text-sm font-medium">当前选择:</span>
+                                        <span className="text-sm font-mono text-foreground truncate">
+                                          {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.name}
+                                        </span>
+                                      </div>
+                                      <Badge 
+                                        variant="outline" 
+                                        className={`text-xs px-2 py-0.5 h-5 font-mono font-medium flex-shrink-0 ${
+                                          (() => {
+                                            const method = URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.method;
+                                            return method === 'GET' ? 'border-green-500 text-green-700 dark:text-green-400' :
+                                                   method === 'POST' ? 'border-blue-500 text-blue-700 dark:text-blue-400' :
+                                                   method === 'PUT' ? 'border-orange-500 text-orange-700 dark:text-orange-400' :
+                                                   method === 'DELETE' ? 'border-red-500 text-red-700 dark:text-red-400' :
+                                                   'border-gray-500 text-gray-700 dark:text-gray-400';
+                                          })()
+                                        }`}
+                                      >
+                                        {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.method || "GET"}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="max-h-80 overflow-y-auto p-3">
+                                <div className="space-y-1">
+                                  {URL_TREE.map(node => renderTreeNode(node))}
+                                </div>
+                              </div>
+                              {selectedUrlNode && (
+                                <div className="p-3 border-t flex justify-between">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedUrlNode("")
+                                      setHttpUrl("")
+                                      setNewCase({ ...newCase, apiInterface: "" })
+                                    }}
+                                  >
+                                    清除选择
+                                  </Button>
+                                </div>
+                              )}
+                            </PopoverContent>
+                          </Popover>
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="http-method">请求方法</Label>
@@ -1768,61 +1750,6 @@ export function AttackCaseManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* URL接口选择弹窗 */}
-      <Dialog open={isUrlDialogOpen} onOpenChange={setIsUrlDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>选择HTTP接口</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              点击文件夹展开分类，点击接口名称选择
-            </div>
-            {selectedUrlNode && (
-              <div className="p-3 bg-primary/10 border border-primary/20 rounded-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <span className="text-sm font-medium">当前选择:</span>
-                    <span className="text-sm font-mono text-foreground truncate">
-                      {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.name}
-                    </span>
-                  </div>
-                  <Badge 
-                    variant="outline" 
-                    className={`text-xs px-2 py-0.5 h-5 font-mono font-medium flex-shrink-0 ${
-                      (() => {
-                        const method = URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.method;
-                        return method === 'GET' ? 'border-green-500 text-green-700 dark:text-green-400' :
-                               method === 'POST' ? 'border-blue-500 text-blue-700 dark:text-blue-400' :
-                               method === 'PUT' ? 'border-orange-500 text-orange-700 dark:text-orange-400' :
-                               method === 'DELETE' ? 'border-red-500 text-red-700 dark:text-red-400' :
-                               'border-gray-500 text-gray-700 dark:text-gray-400';
-                      })()
-                    }`}
-                  >
-                    {URL_TREE.flatMap(node => findAllNodes(node)).find(n => n.id === selectedUrlNode)?.method || "GET"}
-                  </Badge>
-                </div>
-              </div>
-            )}
-            <div className="border rounded-md p-3 bg-background max-h-96 overflow-y-auto">
-              <div className="space-y-1">
-                {URL_TREE.map(node => renderTreeNode(node))}
-              </div>
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsUrlDialogOpen(false)}>
-                取消
-              </Button>
-              {selectedUrlNode && (
-                <Button onClick={() => setIsUrlDialogOpen(false)}>
-                  确认选择
-                </Button>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
